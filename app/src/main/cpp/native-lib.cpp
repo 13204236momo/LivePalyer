@@ -77,6 +77,14 @@ Java_com_demo_livePlayer_LivePlayerUtil_native_1start(JNIEnv *env, jobject insta
                                      WINDOW_FORMAT_RGBA_8888);
     ANativeWindow_Buffer outBuffer;
     AVFrame *frame = av_frame_alloc();
+    AVFrame *rgb_frame = av_frame_alloc();
+    //缓存区
+    uint8_t *out_buffer= (uint8_t *)av_malloc(avpicture_get_size(AV_PIX_FMT_RGBA,
+                                                                  codecContext->width,codecContext->height));
+    //与缓存区相关联，设置rgb_frame缓存区
+    avpicture_fill((AVPicture *)rgb_frame,out_buffer,AV_PIX_FMT_RGBA,codecContext->width,codecContext->height);
+
+
     while (av_read_frame(formatContext, packet) >= 0) {
         avcodec_send_packet(codecContext, packet);
         result = avcodec_receive_frame(codecContext, frame);
@@ -85,30 +93,24 @@ Java_com_demo_livePlayer_LivePlayerUtil_native_1start(JNIEnv *env, jobject insta
         } else if (result < 0) {
             break;
         }
-        //接收的容器
-        uint8_t *dst_data[0];
-        //每一行的首地址
-        int dst_lineSize[0];
-        av_image_alloc(dst_data, dst_lineSize, codecContext->width, codecContext->height,
-                       AV_PIX_FMT_RGBA, 1);
 
         if (packet->stream_index == video_stream_idx) {
             //非零 正在解码
             if (result == 0) {
-                //
                 ANativeWindow_lock(nativeWindow, &outBuffer, NULL);
                 //绘制
-                sws_scale(swsContext, frame->data, frame->linesize, 0, frame->height, dst_data,
-                          dst_lineSize);
+                sws_scale(swsContext,(const uint8_t *const *)frame->data,frame->linesize,0,
+                          frame->height,rgb_frame->data, rgb_frame->linesize);
                 //拿到一行有多少个字节RGBA
                 int destStride = outBuffer.stride * 4;
-                uint8_t *src_data = dst_data[0];
-                int src_lineSize = dst_lineSize[0];
                 uint8_t *firstWindow = static_cast<uint8_t *>(outBuffer.bits);
+                uint8_t *src_data = rgb_frame->data[0];;
+                int srcStride = rgb_frame->linesize[0];
+
                 //渲染
                 for (int i = 0; i < outBuffer.height; ++i) {
                     //内存拷贝 进行渲染
-                    memcpy(firstWindow + i * destStride, src_data + i * src_lineSize, destStride);
+                    memcpy(firstWindow + i * destStride, src_data + i * srcStride, srcStride);
                 }
                 ANativeWindow_unlockAndPost(nativeWindow);
                 usleep(1000 * 16);
