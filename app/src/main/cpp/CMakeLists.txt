@@ -31,4 +31,7 @@ target_link_libraries(
         liveplayer
         #这些是要引入的静态库，编译时会在头尾加上lib和.a,即lib+avfilter+.a
         avfilter avformat avcodec avutil swresample swscale
-        ${log-lib})
+        ${log-lib}
+        android
+        z
+        OpenSLES)

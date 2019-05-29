@@ -7,22 +7,30 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
-   <SurfaceView
-       android:id="@+id/surfaceView"
-       android:layout_width="match_parent"
-       android:layout_height="200dp" />
+    <SurfaceView
+        android:id="@+id/surfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="200dp" />
 
     <SeekBar
         android:id="@+id/seekBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:max="100"
-        android:visibility="gone"/>
+        android:visibility="gone" />
+
     <Button
         android:id="@+id/btn_start"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="开始"
-        android:onClick="open"/>
+        android:onClick="open"
+        android:text="开始" />
+
+    <Button
+        android:id="@+id/btn_play"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="play"
+        android:text="音频播放" />
 
 </LinearLayout>

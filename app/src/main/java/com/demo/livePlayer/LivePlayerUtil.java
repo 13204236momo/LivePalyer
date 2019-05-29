@@ -1,4 +1,4 @@
-package com.demo.liveplayer;
+package com.demo.livePlayer;
 
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -45,5 +45,11 @@ public class LivePlayerUtil implements SurfaceHolder.Callback {
         native_start(path,surfaceHolder.getSurface());
     }
 
+    public void sound(String input,String output){
+        native_sound(input,output);
+    }
+
     private native void native_start(String path, Surface surface);
+
+    private native void native_sound(String input,String output);
 }
