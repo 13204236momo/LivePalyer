@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.4.1)
 
 #CMAKE_SOURCE_DIR代表的是CMakeLists.txt的路径
 file(GLOB SOURCE ${CMAKE_SOURCE_DIR}/*.cpp)
+add_subdirectory(${CMAKE_SOURCE_DIR}/librtmp)
 add_library(
         # liveplayer这个是可以随意取名的
         liveplayer
@@ -34,4 +35,5 @@ target_link_libraries(
         ${log-lib}
         android
         z
-        OpenSLES)
+        OpenSLES
+        rtmp)
