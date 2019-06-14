@@ -15,8 +15,8 @@ find_library( # Sets the name of the path variable.
         log)
 
 #引入头文件
-include_directories(${CMAKE_SOURCE_DIR}/include)
-
+include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include_x264)
+#include_directories(${CMAKE_SOURCE_DIR}/include_x264)
 #CMAKE_CXX_FLAGS是一个系统变量
 #ANDROID_ABI：内置系统变量，表示当前编译的平台即（"armeabi-v7a"）
 #my_lib_path 是我们自己定义的变量(可以自己命名)
@@ -25,7 +25,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 set(my_lib_path ${CMAKE_SOURCE_DIR}/../../../libs/${ANDROID_ABI})
 
 #设置静态库路径
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -L${my_lib_path}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L${my_lib_path}")
 
 target_link_libraries(
         #和上面add_library中的库名保持一致
@@ -36,4 +36,5 @@ target_link_libraries(
         android
         z
         OpenSLES
-        rtmp)
+        rtmp
+        x264)

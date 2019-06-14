@@ -18,6 +18,7 @@ public class StartActivity extends AppCompatActivity {
     }
 
     public void liveUp(View view) {
+        startActivity(new Intent(this,LiveActivity.class));
     }
 
     public void liveDown(View view) {
