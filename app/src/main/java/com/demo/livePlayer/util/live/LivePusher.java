@@ -13,6 +13,7 @@ public class LivePusher {
 
     public LivePusher(Activity activity, int width, int height, int bitrate,
                       int fps, int cameraId) {
+        native_init();
         videoChannel = new VideoChannel(this, activity, width, height, bitrate, fps, cameraId);
         audioChannel = new AudioChannel(this);
     }
@@ -24,5 +25,16 @@ public class LivePusher {
     public void switchCamera() {
         videoChannel.switchCamera();
     }
+
+    public void startLive(String url) {
+        native_start(url);
+    }
+
+
+    public native void native_init();
+    public native void native_setVideoEncInfo(int width,int height,int fps,int bitrate);
+    public native void native_start(String url);
+
+
 }
 

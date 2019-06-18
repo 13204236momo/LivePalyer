@@ -11,9 +11,12 @@ public class VideoChannel implements Camera.PreviewCallback, CameraHelper.OnChan
     private int mBitrate;
     private int mFps;
     private boolean isLiving;
+    private LivePusher livePusher;
+
     public VideoChannel(LivePusher livePusher, Activity activity, int width, int height, int bitrate, int fps, int cameraId) {
         mBitrate = bitrate;
         mFps = fps;
+        this.livePusher = livePusher;
         cameraHelper = new CameraHelper(activity, cameraId, width, height);
         cameraHelper.setPreviewCallback(this);
         cameraHelper.setOnChangedSizeListener(this);
@@ -26,8 +29,9 @@ public class VideoChannel implements Camera.PreviewCallback, CameraHelper.OnChan
 
     @Override
     public void onChanged(int w, int h) {
-
+        livePusher.native_setVideoEncInfo(w, h, mFps, mBitrate);
     }
+
     public void switchCamera() {
         cameraHelper.switchCamera();
     }

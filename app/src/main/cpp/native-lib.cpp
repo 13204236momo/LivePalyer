@@ -2,11 +2,13 @@
 #include <string>
 #include <zconf.h>
 #include <android/log.h>
+#include <pthread.h>
 #include "android/native_window_jni.h"
 #include "x264.h"
 #include "librtmp/rtmp.h"
+#include "VideoChannel.h"
+#include "macro.h"
 
-const char *LOG_TAG = "native-lib";
 #define MAX_AUDIO_FRAME_SIZE 192000
 extern "C" {
 //封装格式
@@ -20,11 +22,59 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
+VideoChannel *videoChannel;
+//是否已开启推流线程
+int isStart = 0;
+pthread_t pid;
+uint32_t start_time;
+int readyPushing = 0;
+
+void *start(void *args) {
+    char *url = static_cast<char *>(args);
+     RTMP *rtmp = 0;
+     rtmp = RTMP_Alloc();
+     if (!rtmp){
+         LOGE("alloc rtmp失败");
+         return NULL;
+     }
+
+     RTMP_Init(rtmp);
+     int ret = RTMP_SetupURL(rtmp,url);
+     if (!ret){
+         LOGE("设置地址失败：%s",url);
+         return NULL;
+     }
+
+     //设置连接超时
+     rtmp->Link.timeout = 5;
+     RTMP_EnableWrite(rtmp);
+     ret = RTMP_Connect(rtmp,0);
+    if (!ret){
+        LOGE("连接服务器失败：%s",url);
+        return NULL;
+    }
+
+    //连接流
+    ret = RTMP_ConnectStream(rtmp,0);
+    if (!ret){
+        LOGE("连接流失败：%s",url);
+        return NULL;
+    }
+
+    start_time = RTMP_GetTime();
+    //表示可以推流了
+    readyPushing = 1;
+
+    while (readyPushing){
+
+    }
+}
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_demo_livePlayer_util_LivePlayerUtil_native_1start(JNIEnv *env, jobject instance, jstring path_,
-                                                      jobject surface) {
+Java_com_demo_livePlayer_util_LivePlayerUtil_native_1start(JNIEnv *env, jobject instance,
+                                                           jstring path_,
+                                                           jobject surface) {
 
     const char *path = env->GetStringUTFChars(path_, 0);
 
@@ -81,10 +131,12 @@ Java_com_demo_livePlayer_util_LivePlayerUtil_native_1start(JNIEnv *env, jobject 
     AVFrame *frame = av_frame_alloc();
     AVFrame *rgb_frame = av_frame_alloc();
     //缓存区
-    uint8_t *out_buffer= (uint8_t *)av_malloc(avpicture_get_size(AV_PIX_FMT_RGBA,
-                                                                  codecContext->width,codecContext->height));
+    uint8_t *out_buffer = (uint8_t *) av_malloc(avpicture_get_size(AV_PIX_FMT_RGBA,
+                                                                   codecContext->width,
+                                                                   codecContext->height));
     //与缓存区相关联，设置rgb_frame缓存区
-    avpicture_fill((AVPicture *)rgb_frame,out_buffer,AV_PIX_FMT_RGBA,codecContext->width,codecContext->height);
+    avpicture_fill((AVPicture *) rgb_frame, out_buffer, AV_PIX_FMT_RGBA, codecContext->width,
+                   codecContext->height);
 
 
     while (av_read_frame(formatContext, packet) >= 0) {
@@ -101,8 +153,8 @@ Java_com_demo_livePlayer_util_LivePlayerUtil_native_1start(JNIEnv *env, jobject 
             if (result == 0) {
                 ANativeWindow_lock(nativeWindow, &outBuffer, NULL);
                 //绘制
-                sws_scale(swsContext,(const uint8_t *const *)frame->data,frame->linesize,0,
-                          frame->height,rgb_frame->data, rgb_frame->linesize);
+                sws_scale(swsContext, (const uint8_t *const *) frame->data, frame->linesize, 0,
+                          frame->height, rgb_frame->data, rgb_frame->linesize);
                 //拿到一行有多少个字节RGBA
                 int destStride = outBuffer.stride * 4;
                 uint8_t *firstWindow = static_cast<uint8_t *>(outBuffer.bits);
@@ -128,8 +180,9 @@ Java_com_demo_livePlayer_util_LivePlayerUtil_native_1start(JNIEnv *env, jobject 
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_demo_livePlayer_util_LivePlayerUtil_native_1sound(JNIEnv *env, jobject instance, jstring input_,
-                                                      jstring output_) {
+Java_com_demo_livePlayer_util_LivePlayerUtil_native_1sound(JNIEnv *env, jobject instance,
+                                                           jstring input_,
+                                                           jstring output_) {
     const char *input = env->GetStringUTFChars(input_, 0);
     const char *output = env->GetStringUTFChars(output_, 0);
 
@@ -205,9 +258,10 @@ Java_com_demo_livePlayer_util_LivePlayerUtil_native_1sound(JNIEnv *env, jobject 
 
             int out_channel_nb = av_get_channel_layout_nb_channels((uint64_t) out_buffer);
             //缓冲区大小
-            int out_buffer_size = av_samples_get_buffer_size(NULL,out_channel_nb, frame->nb_samples,
-                    out_sample,1);
-            fwrite(out_buffer,1,out_buffer_size,fp_pcm);
+            int out_buffer_size = av_samples_get_buffer_size(NULL, out_channel_nb,
+                                                             frame->nb_samples,
+                                                             out_sample, 1);
+            fwrite(out_buffer, 1, out_buffer_size, fp_pcm);
         }
     }
     fclose(fp_pcm);
@@ -224,6 +278,65 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_demo_livePlayer_LiveActivity_toStringX264(JNIEnv *env, jobject instance) {
 
-   x264_picture_t* x264_picture = new x264_picture_t;
-   RTMP_Alloc();
+    x264_picture_t *x264_picture = new x264_picture_t;
+    RTMP_Alloc();
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+/**
+ * 初始化
+ * @param env
+ * @param instance
+ */
+Java_com_demo_livePlayer_util_live_LivePusher_native_1init(JNIEnv *env, jobject instance) {
+
+    videoChannel = new VideoChannel();
+
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+/**
+ *
+ * @param env
+ * @param instance
+ * @param width
+ * @param height
+ * @param fps 帧率
+ * @param bitrate 码率
+ */
+Java_com_demo_livePlayer_util_live_LivePusher_native_1setVideoEncInfo(JNIEnv *env, jobject instance,
+                                                                      jint width, jint height,
+                                                                      jint fps, jint bitrate) {
+    if (!videoChannel) {
+        return;
+    }
+    videoChannel->setVideoEncInfo(width, height, fps, bitrate);
+
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+/**
+ * 开始推流
+ * @param env
+ * @param instance
+ * @param url_  服务器地址
+ */
+Java_com_demo_livePlayer_util_live_LivePusher_native_1start(JNIEnv *env, jobject instance,
+                                                            jstring url_) {
+    const char *url = env->GetStringUTFChars(url_, 0);
+
+    if (isStart) {
+        return;
+    }
+
+    isStart = 1;
+    char *path = new char[strlen(url) + 1];
+    strcpy(path, url);
+    pthread_create(&pid, 0, start, path);
+
+    env->ReleaseStringUTFChars(url_, url);
 }

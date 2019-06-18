@@ -46,6 +46,7 @@ public class LiveActivity extends AppCompatActivity {
     }
 
     public void startLive(View view) {
+        livePusher.startLive("");
     }
 
     public void stopLive(View view) {
