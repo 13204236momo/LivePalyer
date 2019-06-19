@@ -28,12 +28,14 @@ public class LivePusher {
 
     public void startLive(String url) {
         native_start(url);
+        videoChannel.startLive();
     }
 
 
     public native void native_init();
     public native void native_setVideoEncInfo(int width,int height,int fps,int bitrate);
     public native void native_start(String url);
+    public native void native_pushVideo(byte[] data);
 
 
 }

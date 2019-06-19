@@ -4,10 +4,12 @@
 #include <android/log.h>
 #include <pthread.h>
 #include "android/native_window_jni.h"
+#include <stdint.h>
 #include "x264.h"
 #include "librtmp/rtmp.h"
 #include "VideoChannel.h"
 #include "macro.h"
+#include "safe_queue.h"
 
 #define MAX_AUDIO_FRAME_SIZE 192000
 extern "C" {
@@ -28,45 +30,92 @@ int isStart = 0;
 pthread_t pid;
 uint32_t start_time;
 int readyPushing = 0;
+//队列
+SafeQueue<RTMPPacket *> packets;
+
+
+void releasePacket(RTMPPacket *packet) {
+if (packet){
+    RTMPPacket_Free(packet);
+    delete packet;
+}
+}
 
 void *start(void *args) {
     char *url = static_cast<char *>(args);
-     RTMP *rtmp = 0;
-     rtmp = RTMP_Alloc();
-     if (!rtmp){
-         LOGE("alloc rtmp失败");
-         return NULL;
-     }
+    RTMP *rtmp = 0;
+    rtmp = RTMP_Alloc();
+    if (!rtmp) {
+        LOGE("alloc rtmp失败");
+        return NULL;
+    }
 
-     RTMP_Init(rtmp);
-     int ret = RTMP_SetupURL(rtmp,url);
-     if (!ret){
-         LOGE("设置地址失败：%s",url);
-         return NULL;
-     }
+    RTMP_Init(rtmp);
+    int ret = RTMP_SetupURL(rtmp, url);
+    if (!ret) {
+        LOGE("设置地址失败：%s", url);
+        return NULL;
+    }
 
-     //设置连接超时
-     rtmp->Link.timeout = 5;
-     RTMP_EnableWrite(rtmp);
-     ret = RTMP_Connect(rtmp,0);
-    if (!ret){
-        LOGE("连接服务器失败：%s",url);
+    //设置连接超时
+    rtmp->Link.timeout = 5;
+    RTMP_EnableWrite(rtmp);
+    ret = RTMP_Connect(rtmp, 0);
+    if (!ret) {
+        LOGE("连接服务器失败：%s", url);
         return NULL;
     }
 
     //连接流
-    ret = RTMP_ConnectStream(rtmp,0);
-    if (!ret){
-        LOGE("连接流失败：%s",url);
+    ret = RTMP_ConnectStream(rtmp, 0);
+    if (!ret) {
+        LOGE("连接流失败：%s", url);
         return NULL;
     }
 
     start_time = RTMP_GetTime();
     //表示可以推流了
     readyPushing = 1;
+    packets.setWork(1);
+    RTMPPacket *packet = 0;
+    while (readyPushing) {
+        //列队获取数据 packets
+        packets.get(packet);
+        LOGE("取出一帧数据");
+        if (!readyPushing){
+            break;
+        }
+        if (!packet){
+            continue;
+        }
+        packet->m_nInfoField2 = rtmp->m_stream_id;
+        //发送数据包
+        ret = RTMP_SendPacket(rtmp,packet,1);
+        if (!ret) {
+            LOGE("发送数据包失败");
+            return NULL;
+        }
+        //packet 释放
+        releasePacket(packet);
+    }
 
-    while (readyPushing){
+    isStart = 0;
+    readyPushing = 0;
+    packets.setWork(0);
+    packets.clear();
+    if (rtmp){
+        //关闭连接
+        RTMP_Close(rtmp);
+        RTMP_Free(rtmp);
+    }
+    delete (url);
+    return 0;
+}
 
+void callback(RTMPPacket *packet){
+    if (packet){
+        packet->m_nTimeStamp = RTMP_GetTime()-start_time;
+        packets.put(packet);
     }
 }
 
@@ -191,12 +240,12 @@ Java_com_demo_livePlayer_util_LivePlayerUtil_native_1sound(JNIEnv *env, jobject 
     AVFormatContext *formatContext = avformat_alloc_context();
     //打开音频文件
     if (avformat_open_input(&formatContext, input, NULL, NULL) != 0) {
-        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "无法打开音频文件");
+        LOGE("无法打开音频文件");
         return;
     }
     //获取输入文件信息
     if (avformat_find_stream_info(formatContext, NULL) < 0) {
-        __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "无法获取输入文件信息");
+        LOGE("无法获取输入文件信息");
         return;
     }
 
@@ -248,7 +297,7 @@ Java_com_demo_livePlayer_util_LivePlayerUtil_native_1sound(JNIEnv *env, jobject 
         if (result == AVERROR(EAGAIN)) {
             continue;
         } else if (result < 0) {
-            __android_log_print(ANDROID_LOG_INFO, LOG_TAG, "解码完成");
+            LOGE("解码完成");
             break;
         }
         if (packet->stream_index == audio_stream_idx) {
@@ -292,7 +341,7 @@ JNIEXPORT void JNICALL
 Java_com_demo_livePlayer_util_live_LivePusher_native_1init(JNIEnv *env, jobject instance) {
 
     videoChannel = new VideoChannel();
-
+    videoChannel->setVideoCallback(callback);
 }
 
 
@@ -339,4 +388,22 @@ Java_com_demo_livePlayer_util_live_LivePusher_native_1start(JNIEnv *env, jobject
     pthread_create(&pid, 0, start, path);
 
     env->ReleaseStringUTFChars(url_, url);
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_demo_livePlayer_util_live_LivePusher_native_1pushVideo(JNIEnv *env, jobject instance,
+                                                                jbyteArray data_) {
+    jbyte *data = env->GetByteArrayElements(data_, NULL);
+
+    if (!videoChannel || !readyPushing){
+        return;
+    }
+
+    videoChannel->encodeData(data);
+
+
+
+    env->ReleaseByteArrayElements(data_, data, 0);
 }

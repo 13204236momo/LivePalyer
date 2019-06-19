@@ -25,6 +25,9 @@ public class VideoChannel implements Camera.PreviewCallback, CameraHelper.OnChan
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
         Log.i(TAG, "获取到一帧   onPreviewFrame: ");
+        if (isLiving) {
+            livePusher.native_pushVideo(data);
+        }
     }
 
     @Override
@@ -38,6 +41,10 @@ public class VideoChannel implements Camera.PreviewCallback, CameraHelper.OnChan
 
     public void setPreviewDisplay(SurfaceHolder surfaceHolder) {
         cameraHelper.setPreviewDisplay(surfaceHolder);
+    }
+
+    public void startLive() {
+        isLiving = true;
     }
 }
 
