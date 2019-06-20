@@ -407,3 +407,14 @@ Java_com_demo_livePlayer_util_live_LivePusher_native_1pushVideo(JNIEnv *env, job
 
     env->ReleaseByteArrayElements(data_, data, 0);
 }
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_demo_livePlayer_util_live_LivePusher_native_1pushAudio(JNIEnv *env, jobject instance,
+                                                                jbyteArray data_) {
+    jbyte *data = env->GetByteArrayElements(data_, NULL);
+
+
+
+    env->ReleaseByteArrayElements(data_, data, 0);
+}

@@ -36,7 +36,7 @@ public class LivePusher {
     public native void native_setVideoEncInfo(int width,int height,int fps,int bitrate);
     public native void native_start(String url);
     public native void native_pushVideo(byte[] data);
-
+    public native void native_pushAudio(byte[] data);
 
 }
 
