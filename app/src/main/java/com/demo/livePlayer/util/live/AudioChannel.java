@@ -11,6 +11,7 @@ import java.util.concurrent.Executors;
 public class AudioChannel {
     private LivePusher mLivePusher;
     private AudioRecord audioRecord;
+    private int inputSamples;
     private int channels = 2;
     private  int minBufferSize;
     int channelConfig;
@@ -24,8 +25,12 @@ public class AudioChannel {
         }else {
             channelConfig = AudioFormat.CHANNEL_IN_MONO;
         }
+        mLivePusher.native_setAudioEncInfo(44100,channels);
+        inputSamples = mLivePusher.getInoutSamples() * 2;
         minBufferSize = AudioRecord.getMinBufferSize(44100,channelConfig,AudioFormat.ENCODING_PCM_16BIT)*2;
-        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,44100,channelConfig,AudioFormat.ENCODING_PCM_16BIT,minBufferSize);
+        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,44100,
+                channelConfig,AudioFormat.ENCODING_PCM_16BIT,minBufferSize>inputSamples?inputSamples:minBufferSize);
+
         
     }
     

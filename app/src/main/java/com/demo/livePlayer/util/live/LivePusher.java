@@ -29,6 +29,7 @@ public class LivePusher {
     public void startLive(String url) {
         native_start(url);
         videoChannel.startLive();
+        audioChannel.startLive();
     }
 
 
@@ -37,6 +38,7 @@ public class LivePusher {
     public native void native_start(String url);
     public native void native_pushVideo(byte[] data);
     public native void native_pushAudio(byte[] data);
-
+    public native void native_setAudioEncInfo(int i,int channels);
+    public native int getInoutSamples();
 }
 

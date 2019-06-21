@@ -8,6 +8,7 @@
 #include "x264.h"
 #include "librtmp/rtmp.h"
 #include "VideoChannel.h"
+#include "AudioChannel.h"
 #include "macro.h"
 #include "safe_queue.h"
 
@@ -25,6 +26,7 @@ extern "C" {
 }
 
 VideoChannel *videoChannel;
+AudioChannel *audioChannel;
 //是否已开启推流线程
 int isStart = 0;
 pthread_t pid;
@@ -33,6 +35,8 @@ int readyPushing = 0;
 //队列
 SafeQueue<RTMPPacket *> packets;
 
+
+void encodeData(jbyte *data);
 
 void releasePacket(RTMPPacket *packet) {
 if (packet){
@@ -227,6 +231,7 @@ Java_com_demo_livePlayer_util_LivePlayerUtil_native_1start(JNIEnv *env, jobject 
     avformat_free_context(formatContext);
     env->ReleaseStringUTFChars(path_, path);
 }
+
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_demo_livePlayer_util_LivePlayerUtil_native_1sound(JNIEnv *env, jobject instance,
@@ -340,8 +345,10 @@ JNIEXPORT void JNICALL
  */
 Java_com_demo_livePlayer_util_live_LivePusher_native_1init(JNIEnv *env, jobject instance) {
 
-    videoChannel = new VideoChannel();
+    videoChannel = new VideoChannel;
     videoChannel->setVideoCallback(callback);
+    audioChannel = new AudioChannel;
+    audioChannel->setAudioCallback(callback);
 }
 
 
@@ -393,28 +400,56 @@ Java_com_demo_livePlayer_util_live_LivePusher_native_1start(JNIEnv *env, jobject
 
 extern "C"
 JNIEXPORT void JNICALL
+/**
+ * 视频推流
+ * @param env
+ * @param instance
+ * @param data_
+ */
 Java_com_demo_livePlayer_util_live_LivePusher_native_1pushVideo(JNIEnv *env, jobject instance,
                                                                 jbyteArray data_) {
     jbyte *data = env->GetByteArrayElements(data_, NULL);
-
     if (!videoChannel || !readyPushing){
         return;
     }
-
     videoChannel->encodeData(data);
-
-
-
     env->ReleaseByteArrayElements(data_, data, 0);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
+/**
+ * 音频推流
+ * @param env
+ * @param instance
+ * @param data_
+ */
 Java_com_demo_livePlayer_util_live_LivePusher_native_1pushAudio(JNIEnv *env, jobject instance,
                                                                 jbyteArray data_) {
     jbyte *data = env->GetByteArrayElements(data_, NULL);
 
-
-
+    if (!audioChannel || !readyPushing){
+        return;
+    }
+    audioChannel ->encodeData(data);
     env->ReleaseByteArrayElements(data_, data, 0);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_demo_livePlayer_util_live_LivePusher_native_1setAudioEncInfo(JNIEnv *env, jobject instance,
+                                                                      jint i, jint channels) {
+    if (audioChannel){
+        audioChannel->setAudioEncInfo(i,channels);
+    }
+
+}extern "C"
+JNIEXPORT jint JNICALL
+Java_com_demo_livePlayer_util_live_LivePusher_getInoutSamples(JNIEnv *env, jobject instance) {
+
+if (audioChannel){
+    return audioChannel->getInputSamples();
+}
+    return -1;
+
 }
