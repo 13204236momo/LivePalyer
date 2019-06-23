@@ -4,6 +4,7 @@ package com.demo.livePlayer.util.live;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.util.Log;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,9 +46,12 @@ public class AudioChannel {
         public void run() {
             audioRecord.startRecording();
             //pcm 音频原始数据
-            byte[] bytes = new byte[minBufferSize];
+            byte[] bytes = new byte[inputSamples];
             while (isLiving){
                 int len = audioRecord.read(bytes,0,bytes.length);
+                if (len<0){
+                    Log.e("AudioChannel","读取音频数据失败");
+                }
                 mLivePusher.native_pushAudio(bytes);
             }
         }

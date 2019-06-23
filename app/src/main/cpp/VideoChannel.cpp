@@ -5,7 +5,7 @@
 #include <x264.h>
 #include <memory.h>
 #include "VideoChannel.h"
-#include "../../../../../../sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/include/c++/4.9.x/cstdint"
+
 #include "librtmp/rtmp.h"
 #include "macro.h"
 

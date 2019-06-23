@@ -11,13 +11,18 @@
 
 class AudioChannel {
     typedef void (*AudioCallback)(RTMPPacket *packet);
+
 public:
     void setAudioEncInfo(int samplesInHZ, int channels);
+
     void encodeData(jbyte *string);
+
+    RTMPPacket *getAudioTag();
 
     int getInputSamples();
 
     void setAudioCallback(AudioCallback audioCallback);
+
 private:
     AudioCallback audioCallback;
     int mChannels;
@@ -25,6 +30,7 @@ private:
     u_long inputSample;
     u_long maxOutputBytes;
     u_char *buffer = 0;
+
 
 };
 

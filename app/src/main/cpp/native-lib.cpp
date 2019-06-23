@@ -36,13 +36,21 @@ int readyPushing = 0;
 SafeQueue<RTMPPacket *> packets;
 
 
-void encodeData(jbyte *data);
+ANativeWindow *window = 0;
+
 
 void releasePacket(RTMPPacket *packet) {
-if (packet){
-    RTMPPacket_Free(packet);
-    delete packet;
+    if (packet) {
+        RTMPPacket_Free(packet);
+        delete packet;
+    }
 }
+
+void callback(RTMPPacket *packet) {
+    if (packet) {
+        packet->m_nTimeStamp = RTMP_GetTime() - start_time;
+        packets.put(packet);
+    }
 }
 
 void *start(void *args) {
@@ -82,19 +90,20 @@ void *start(void *args) {
     readyPushing = 1;
     packets.setWork(1);
     RTMPPacket *packet = 0;
+    callback(audioChannel->getAudioTag());
     while (readyPushing) {
         //列队获取数据 packets
         packets.get(packet);
         LOGE("取出一帧数据");
-        if (!readyPushing){
+        if (!readyPushing) {
             break;
         }
-        if (!packet){
+        if (!packet) {
             continue;
         }
         packet->m_nInfoField2 = rtmp->m_stream_id;
         //发送数据包
-        ret = RTMP_SendPacket(rtmp,packet,1);
+        ret = RTMP_SendPacket(rtmp, packet, 1);
         if (!ret) {
             LOGE("发送数据包失败");
             return NULL;
@@ -107,7 +116,7 @@ void *start(void *args) {
     readyPushing = 0;
     packets.setWork(0);
     packets.clear();
-    if (rtmp){
+    if (rtmp) {
         //关闭连接
         RTMP_Close(rtmp);
         RTMP_Free(rtmp);
@@ -116,12 +125,6 @@ void *start(void *args) {
     return 0;
 }
 
-void callback(RTMPPacket *packet){
-    if (packet){
-        packet->m_nTimeStamp = RTMP_GetTime()-start_time;
-        packets.put(packet);
-    }
-}
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -330,7 +333,7 @@ Java_com_demo_livePlayer_util_LivePlayerUtil_native_1sound(JNIEnv *env, jobject 
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_demo_livePlayer_LiveActivity_toStringX264(JNIEnv *env, jobject instance) {
+Java_com_demo_livePlayer_LivePushActivity_toStringX264(JNIEnv *env, jobject instance) {
 
     x264_picture_t *x264_picture = new x264_picture_t;
     RTMP_Alloc();
@@ -409,7 +412,7 @@ JNIEXPORT void JNICALL
 Java_com_demo_livePlayer_util_live_LivePusher_native_1pushVideo(JNIEnv *env, jobject instance,
                                                                 jbyteArray data_) {
     jbyte *data = env->GetByteArrayElements(data_, NULL);
-    if (!videoChannel || !readyPushing){
+    if (!videoChannel || !readyPushing) {
         return;
     }
     videoChannel->encodeData(data);
@@ -428,10 +431,10 @@ Java_com_demo_livePlayer_util_live_LivePusher_native_1pushAudio(JNIEnv *env, job
                                                                 jbyteArray data_) {
     jbyte *data = env->GetByteArrayElements(data_, NULL);
 
-    if (!audioChannel || !readyPushing){
+    if (!audioChannel || !readyPushing) {
         return;
     }
-    audioChannel ->encodeData(data);
+    audioChannel->encodeData(data);
     env->ReleaseByteArrayElements(data_, data, 0);
 }
 
@@ -439,17 +442,55 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_demo_livePlayer_util_live_LivePusher_native_1setAudioEncInfo(JNIEnv *env, jobject instance,
                                                                       jint i, jint channels) {
-    if (audioChannel){
-        audioChannel->setAudioEncInfo(i,channels);
+    if (audioChannel) {
+        audioChannel->setAudioEncInfo(i, channels);
     }
 
 }extern "C"
 JNIEXPORT jint JNICALL
 Java_com_demo_livePlayer_util_live_LivePusher_getInoutSamples(JNIEnv *env, jobject instance) {
 
-if (audioChannel){
-    return audioChannel->getInputSamples();
-}
+    if (audioChannel) {
+        return audioChannel->getInputSamples();
+    }
     return -1;
+
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+/**
+ * 传入视频流，解析
+ * @param env
+ * @param instance
+ * @param dataSource_
+ */
+Java_com_demo_livePlayer_util_player_Player_native_1prepare(JNIEnv *env, jobject instance,
+                                                            jstring dataSource_) {
+    const char *dataSource = env->GetStringUTFChars(dataSource_, 0);
+
+
+
+    env->ReleaseStringUTFChars(dataSource_, dataSource);
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_demo_livePlayer_util_player_Player_native_1staert(JNIEnv *env, jobject instance) {
+
+    // TODO
+
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_demo_livePlayer_util_player_Player_native_1set_1surface(JNIEnv *env, jobject instance,
+                                                                 jobject surface) {
+
+    if (window){
+        ANativeWindow_release(window);
+        window = 0;
+    }
+   //创建新的窗口用于视频显示
+    window = ANativeWindow_fromSurface(env,surface);
 
 }
