@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <x264.h>
 #include <memory.h>
-#include "VideoChannel.h"
+#include "VideoPushChannel.h"
 
 #include "librtmp/rtmp.h"
 #include "macro.h"

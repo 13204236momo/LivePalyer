@@ -39,6 +39,22 @@ public class LivePullActivity extends AppCompatActivity implements SeekBar.OnSee
         seekBar.setOnSeekBarChangeListener(this);
         player = new Player();
         player.setSurfaceView(surfaceView);
+        player.setOnNativePlayStateListener(new Player.OnNativePlayStateListener() {
+            @Override
+            public void onPrepared() {
+                player.start();
+            }
+
+            @Override
+            public void onProgress(int progress) {
+
+            }
+
+            @Override
+            public void onError(int errorCode) {
+
+            }
+        });
     }
 
     public void startWatch(View view) {

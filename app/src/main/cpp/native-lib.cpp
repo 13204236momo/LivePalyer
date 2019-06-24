@@ -7,11 +7,12 @@
 #include <stdint.h>
 #include "x264.h"
 #include "librtmp/rtmp.h"
-#include "VideoChannel.h"
-#include "AudioChannel.h"
+#include "VideoPushChannel.h"
+#include "AudioPushChannel.h"
 #include "macro.h"
 #include "safe_queue.h"
-
+#include "FFmpegHelper.h"
+#include "JavaCallHelper.h"
 #define MAX_AUDIO_FRAME_SIZE 192000
 extern "C" {
 //封装格式
@@ -37,7 +38,13 @@ SafeQueue<RTMPPacket *> packets;
 
 
 ANativeWindow *window = 0;
-
+FFmpegHelper *ffmpegHelper;
+JavaCallHelper *javaCallHelper;
+JavaVM *javaVM = NULL;
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved){
+    javaVM = vm;
+    return JNI_VERSION_1_4;
+}
 
 void releasePacket(RTMPPacket *packet) {
     if (packet) {
@@ -469,16 +476,17 @@ Java_com_demo_livePlayer_util_player_Player_native_1prepare(JNIEnv *env, jobject
                                                             jstring dataSource_) {
     const char *dataSource = env->GetStringUTFChars(dataSource_, 0);
 
-
-
+    javaCallHelper = new JavaCallHelper(javaVM,env,instance);
+    ffmpegHelper = new FFmpegHelper(javaCallHelper, dataSource);
+    ffmpegHelper->prepare();
     env->ReleaseStringUTFChars(dataSource_, dataSource);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_demo_livePlayer_util_player_Player_native_1staert(JNIEnv *env, jobject instance) {
+Java_com_demo_livePlayer_util_player_Player_native_1start(JNIEnv *env, jobject instance) {
 
-    // TODO
+
 
 }
 extern "C"
@@ -486,11 +494,11 @@ JNIEXPORT void JNICALL
 Java_com_demo_livePlayer_util_player_Player_native_1set_1surface(JNIEnv *env, jobject instance,
                                                                  jobject surface) {
 
-    if (window){
+    if (window) {
         ANativeWindow_release(window);
         window = 0;
     }
-   //创建新的窗口用于视频显示
-    window = ANativeWindow_fromSurface(env,surface);
+    //创建新的窗口用于视频显示
+    window = ANativeWindow_fromSurface(env, surface);
 
 }

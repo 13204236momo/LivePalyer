@@ -19,10 +19,13 @@ public class Player implements SurfaceHolder.Callback {
         this.surfaceHolder.addCallback(this);
     }
 
-    public void prepare(String dataSource){
+    public void prepare(String dataSource) {
         native_prepare(dataSource);
     }
 
+    public void start() {
+        native_start();
+    }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
@@ -39,10 +42,48 @@ public class Player implements SurfaceHolder.Callback {
 
     }
 
+    public void onPrepared() {
+        if (listener != null) {
+            listener.onPrepared();
+        }
+    }
+
+    public void onProgress(int progress) {
+        if (listener != null) {
+            listener.onProgress(progress);
+        }
+    }
+
+    public void onError(int errorCode) {
+        if (listener != null) {
+            listener.onError(errorCode);
+        }
+    }
+
+    public OnNativePlayStateListener listener;
+
+    public void setOnNativePlayStateListener(OnNativePlayStateListener listener) {
+        this.listener = listener;
+    }
+
+
+
+    public interface OnNativePlayStateListener {
+        void onPrepared();
+
+        void onProgress(int progress);
+
+        void onError(int errorCode);
+    }
+
+
+   /*
+    *  jni 方法
+    */
 
     private native void native_prepare(String dataSource);
 
-    private native void native_staert();
+    private native void native_start();
 
     private native void native_set_surface(Surface surface);
 }

@@ -6,7 +6,7 @@
 #include <zconf.h>
 #include <jni.h>
 #include <cstring>
-#include "AudioChannel.h"
+#include "AudioPushChannel.h"
 #include "faac.h"
 #include "librtmp/rtmp.h"
 
