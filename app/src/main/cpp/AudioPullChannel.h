@@ -6,8 +6,15 @@
 #define LIVEPALYER_AUDIOPULLCHANNEL_H
 
 
-class AudioPullChannel {
+class AudioPullChannel : public BaseChannel {
 
+public:
+    AudioPullChannel(volatile int channelId, JavaCallHelper *javaCallHelper,
+                     AVCodecContext *avCodecContext);
+
+    virtual void start();
+    virtual void play();
+    virtual void stop();
 };
 
 

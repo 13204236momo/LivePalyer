@@ -464,6 +464,9 @@ Java_com_demo_livePlayer_util_live_LivePusher_getInoutSamples(JNIEnv *env, jobje
 
 }
 
+void renderFrame(uint8_t *data,int lineSize,int w,int h){
+
+}
 extern "C"
 JNIEXPORT void JNICALL
 /**
@@ -478,6 +481,7 @@ Java_com_demo_livePlayer_util_player_Player_native_1prepare(JNIEnv *env, jobject
 
     javaCallHelper = new JavaCallHelper(javaVM,env,instance);
     ffmpegHelper = new FFmpegHelper(javaCallHelper, dataSource);
+    ffmpegHelper->setRenderFrameCallback(renderFrame);
     ffmpegHelper->prepare();
     env->ReleaseStringUTFChars(dataSource_, dataSource);
 }
@@ -485,7 +489,10 @@ Java_com_demo_livePlayer_util_player_Player_native_1prepare(JNIEnv *env, jobject
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_demo_livePlayer_util_player_Player_native_1start(JNIEnv *env, jobject instance) {
-
+    //开始播放
+    if(ffmpegHelper){
+       ffmpegHelper->start();
+    }
 
 
 }

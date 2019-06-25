@@ -83,6 +83,7 @@ void FFmpegHelper::prepareFFmpeg() {
         } else if (codecParameters->codec_type == AVMEDIA_TYPE_VIDEO) {
             //视频
             videoPullChannel = new VideoPullChannel(i, javaCallHelper, codecContext);
+            videoPullChannel->setReaderFrameCallback(renderFrame);
         }
 
         //音视频都没有
@@ -99,5 +100,71 @@ void FFmpegHelper::prepareFFmpeg() {
     }
 }
 
+void *startThread(void *args) {
+    FFmpegHelper *fFmpegHelper = static_cast<FFmpegHelper *>(args);
+    fFmpegHelper->play();
+    return 0;
+}
+
+void FFmpegHelper::start() {
+    isPlaying = true;
+    if (audioPullChannel) {
+        audioPullChannel->play();
+    }
+
+    if (videoPullChannel) {
+        videoPullChannel->play();
+    }
+
+    pthread_create(&pid_play, NULL, startThread, this);
+}
+
+void FFmpegHelper::play() {
+    int ret = 0;
+    while (isPlaying) {
+        //减缓读取，来避免队列溢出
+        if (audioPullChannel && audioPullChannel->pkt_quene.size() > 100) {
+            //生产者的生产速度远远大于消费者的消费速度
+            av_usleep(1000 * 10);
+            continue;
+        }
+
+        if (videoPullChannel && videoPullChannel->pkt_quene.size() > 100) {
+            //生产者的生产速度远远大于消费者的消费速度
+            av_usleep(1000 * 10);
+            continue;
+        }
+        //读取包
+        AVPacket *packet = av_packet_alloc();
+        //从媒体流中读取音频，视频包
+        ret = av_read_frame(formatContext, packet);
+        if (ret == 0) {
+            //将数据包加入队列
+            if (audioPullChannel && packet->stream_index == audioPullChannel->channelId) {
+                audioPullChannel->pkt_quene.put(packet);
+            } else if (videoPullChannel && packet->stream_index == videoPullChannel->channelId) {
+                videoPullChannel->pkt_quene.put(packet);
+            }
+        } else if (ret == AVERROR_EOF) {
+            //读取完毕 但不一定是播放完毕
+            if (videoPullChannel->pkt_quene.empty() && videoPullChannel->frame_quene.empty() &&
+                audioPullChannel->pkt_quene.empty() && audioPullChannel->frame_quene.empty()) {
+                LOGE("播放完毕。。。");
+                break;
+            }
+            //因为seek的存在，就算读取完毕，依然要循环去执行av_read_frame（否则seek了没用）
+        } else {
+            break;
+        }
+        isPlaying = 0;
+        audioPullChannel->stop();
+        videoPullChannel->stop();
+    }
+}
+
 
 FFmpegHelper::~FFmpegHelper() {}
+
+void FFmpegHelper::setRenderFrameCallback(RenderFrame renderFrame) {
+    this->renderFrame = renderFrame;
+}
