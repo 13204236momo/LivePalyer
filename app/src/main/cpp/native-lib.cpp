@@ -13,6 +13,7 @@
 #include "safe_queue.h"
 #include "FFmpegHelper.h"
 #include "JavaCallHelper.h"
+
 #define MAX_AUDIO_FRAME_SIZE 192000
 extern "C" {
 //封装格式
@@ -41,7 +42,8 @@ ANativeWindow *window = 0;
 FFmpegHelper *ffmpegHelper;
 JavaCallHelper *javaCallHelper;
 JavaVM *javaVM = NULL;
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved){
+
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     javaVM = vm;
     return JNI_VERSION_1_4;
 }
@@ -56,7 +58,7 @@ void releasePacket(RTMPPacket *packet) {
 void callback(RTMPPacket *packet) {
     if (packet) {
         packet->m_nTimeStamp = RTMP_GetTime() - start_time;
-        packets.put(packet);
+        packets.enQueue(packet);
     }
 }
 
@@ -100,7 +102,7 @@ void *start(void *args) {
     callback(audioChannel->getAudioTag());
     while (readyPushing) {
         //列队获取数据 packets
-        packets.get(packet);
+        packets.deQueue(packet);
         LOGE("取出一帧数据");
         if (!readyPushing) {
             break;
@@ -464,9 +466,25 @@ Java_com_demo_livePlayer_util_live_LivePusher_getInoutSamples(JNIEnv *env, jobje
 
 }
 
-void renderFrame(uint8_t *data,int lineSize,int w,int h){
-
+void renderFrame(uint8_t *data, int lineSize, int w, int h) {
+//渲染
+//设置窗口属性
+    ANativeWindow_setBuffersGeometry(window, w, h, WINDOW_FORMAT_RGBA_8888);
+    ANativeWindow_Buffer window_buffer;
+    if (ANativeWindow_lock(window, &window_buffer, 0)) {
+        ANativeWindow_release(window);
+        window = 0;
+        return;
+    }
+    //把数据逐行拷贝到window的缓存区
+    uint8_t *window_data = static_cast<uint8_t *>(window_buffer.bits);
+    int window_lineSize = window_buffer.stride * 4;
+    for (int i = 0; i < window_buffer.height; ++i) {
+        memcpy(window_data+i*window_lineSize,data+i*lineSize,window_lineSize);
+    }
+    ANativeWindow_unlockAndPost(window);
 }
+
 extern "C"
 JNIEXPORT void JNICALL
 /**
@@ -479,7 +497,7 @@ Java_com_demo_livePlayer_util_player_Player_native_1prepare(JNIEnv *env, jobject
                                                             jstring dataSource_) {
     const char *dataSource = env->GetStringUTFChars(dataSource_, 0);
 
-    javaCallHelper = new JavaCallHelper(javaVM,env,instance);
+    javaCallHelper = new JavaCallHelper(javaVM, env, instance);
     ffmpegHelper = new FFmpegHelper(javaCallHelper, dataSource);
     ffmpegHelper->setRenderFrameCallback(renderFrame);
     ffmpegHelper->prepare();
@@ -490,10 +508,9 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_demo_livePlayer_util_player_Player_native_1start(JNIEnv *env, jobject instance) {
     //开始播放
-    if(ffmpegHelper){
-       ffmpegHelper->start();
+    if (ffmpegHelper) {
+        ffmpegHelper->start();
     }
-
 
 }
 extern "C"

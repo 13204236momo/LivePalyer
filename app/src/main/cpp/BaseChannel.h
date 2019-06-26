@@ -4,28 +4,24 @@
 
 #ifndef LIVEPALYER_BASECHANNEL_H
 #define LIVEPALYER_BASECHANNEL_H
-
-
-#include <libavutil/frame.h>
-#include <libavcodec/avcodec.h>
 #include "safe_queue.h"
 #include "JavaCallHelper.h"
 #include "macro.h"
 
+extern "C"{
+#include <libavcodec/avcodec.h>
+};
 class BaseChannel {
 public:
-    SafeQueue<AVPacket *> pkt_quene;
-    SafeQueue<AVFrame *> frame_quene;
+    SafeQueue<AVPacket *> pkt_queue;
+    SafeQueue<AVFrame *> frame_queue;
     volatile int channelId;
     volatile bool isPlaying;
     AVCodecContext *avCodecContext;
     JavaCallHelper *javaCallHelper;
 
     BaseChannel(volatile int channelId, JavaCallHelper *javaCallHelper,
-                AVCodecContext *avCodecContext)
-            : channelId(channelId),
-              avCodecContext(avCodecContext),
-              javaCallHelper(javaCallHelper) {};
+                AVCodecContext *avCodecContext);
 
     virtual void start() = 0;
 
@@ -52,9 +48,9 @@ public:
             avcodec_close(avCodecContext);
             avcodec_free_context(&avCodecContext);
             avCodecContext = 0;
-            pkt_quene.clear();
-            frame_quene.clear();
-            LOGE("释放channel:%d%d", pkt_quene.size(), frame_quene.size());
+            pkt_queue.clear();
+            frame_queue.clear();
+            LOGE("释放channel:%d%d", pkt_queue.size(), frame_queue.size());
         }
     }
 };

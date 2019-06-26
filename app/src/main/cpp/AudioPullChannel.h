@@ -6,6 +6,12 @@
 #define LIVEPALYER_AUDIOPULLCHANNEL_H
 
 
+#include "BaseChannel.h"
+#include "JavaCallHelper.h"
+
+extern "C" {
+#include <libavcodec/avcodec.h>
+};
 class AudioPullChannel : public BaseChannel {
 
 public:

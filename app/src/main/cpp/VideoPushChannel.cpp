@@ -8,6 +8,7 @@
 
 #include "librtmp/rtmp.h"
 #include "macro.h"
+#include "VideoPullChannel.h"
 
 void VideoChannel::setVideoEncInfo(int width, int height, int fps, int bitrate) {
     mWidth = width;

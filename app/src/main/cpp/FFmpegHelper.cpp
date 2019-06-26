@@ -8,13 +8,14 @@
 
 FFmpegHelper::FFmpegHelper(JavaCallHelper *javaCallHelper, const char *dataSource) {
     url = new char[strlen(dataSource) + 1];
-    strcpy(url, dataSource);
     this->javaCallHelper = javaCallHelper;
+    strcpy(url, dataSource);
 }
 
 void *prepareFFmpeg_(void *arg) {
     FFmpegHelper *ffmpegHelper = static_cast<FFmpegHelper *> (arg);
     ffmpegHelper->prepareFFmpeg();
+    return 0;
 }
 
 void FFmpegHelper::prepare() {
@@ -83,7 +84,7 @@ void FFmpegHelper::prepareFFmpeg() {
         } else if (codecParameters->codec_type == AVMEDIA_TYPE_VIDEO) {
             //视频
             videoPullChannel = new VideoPullChannel(i, javaCallHelper, codecContext);
-            videoPullChannel->setReaderFrameCallback(renderFrame);
+            videoPullChannel->setRenderCallback(renderFrame);
         }
 
         //音视频都没有
@@ -108,9 +109,9 @@ void *startThread(void *args) {
 
 void FFmpegHelper::start() {
     isPlaying = true;
-    if (audioPullChannel) {
-        audioPullChannel->play();
-    }
+//    if (audioPullChannel) {
+//        audioPullChannel->play();
+//    }
 
     if (videoPullChannel) {
         videoPullChannel->play();
@@ -123,13 +124,13 @@ void FFmpegHelper::play() {
     int ret = 0;
     while (isPlaying) {
         //减缓读取，来避免队列溢出
-        if (audioPullChannel && audioPullChannel->pkt_quene.size() > 100) {
+        if (audioPullChannel && audioPullChannel->pkt_queue.size() > 100) {
             //生产者的生产速度远远大于消费者的消费速度
             av_usleep(1000 * 10);
             continue;
         }
 
-        if (videoPullChannel && videoPullChannel->pkt_quene.size() > 100) {
+        if (videoPullChannel && videoPullChannel->pkt_queue.size() > 100) {
             //生产者的生产速度远远大于消费者的消费速度
             av_usleep(1000 * 10);
             continue;
@@ -141,14 +142,14 @@ void FFmpegHelper::play() {
         if (ret == 0) {
             //将数据包加入队列
             if (audioPullChannel && packet->stream_index == audioPullChannel->channelId) {
-                audioPullChannel->pkt_quene.put(packet);
+               // audioPullChannel->pkt_queue.enQueue(packet);
             } else if (videoPullChannel && packet->stream_index == videoPullChannel->channelId) {
-                videoPullChannel->pkt_quene.put(packet);
+                videoPullChannel->pkt_queue.enQueue(packet);
             }
         } else if (ret == AVERROR_EOF) {
             //读取完毕 但不一定是播放完毕
-            if (videoPullChannel->pkt_quene.empty() && videoPullChannel->frame_quene.empty() &&
-                audioPullChannel->pkt_quene.empty() && audioPullChannel->frame_quene.empty()) {
+            if (videoPullChannel->pkt_queue.empty() && videoPullChannel->frame_queue.empty() &&
+                audioPullChannel->pkt_queue.empty() && audioPullChannel->frame_queue.empty()) {
                 LOGE("播放完毕。。。");
                 break;
             }

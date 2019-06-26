@@ -35,7 +35,7 @@ public:
 
     void synchronizeFrame();
 
-    void setReaderFrameCallback(RenderFrame renderFrame);
+    void setRenderCallback(RenderFrame renderFrame);
 private:
     pthread_t pid_video_play;
     pthread_t pid_synchronize;
