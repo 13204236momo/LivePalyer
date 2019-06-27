@@ -69,7 +69,7 @@ void FFmpegHelper::prepareFFmpeg() {
                 javaCallHelper->onError(THREAD_CHILD, FFMPEG_ALLOC_CODEC_CONTEXT_FAIL);
             return;
         }
-        //复制参数
+        //
         if (avcodec_parameters_to_context(codecContext, codecpar) < 0) {
             if (javaCallHelper)
                 javaCallHelper->onError(THREAD_CHILD, FFMPEG_CODEC_CONTEXT_PARAMETERS_FAIL);

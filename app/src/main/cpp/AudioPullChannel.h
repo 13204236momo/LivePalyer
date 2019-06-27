@@ -21,6 +21,12 @@ public:
     virtual void start();
     virtual void play();
     virtual void stop();
+
+    void initOpenSL();
+
+private:
+    pthread_t pid_audio_play;
+    pthread_t pid_audio_decodec;
 };
 
 
