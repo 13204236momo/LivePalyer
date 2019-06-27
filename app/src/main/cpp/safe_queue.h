@@ -5,8 +5,6 @@
 #ifndef DNRECORDER_SAFE_QUEUE_H
 #define DNRECORDER_SAFE_QUEUE_H
 
-
-
 #include <queue>
 #include <pthread.h>
 
@@ -180,4 +178,6 @@ private:
     SyncHandle syncHandle;
 
 };
+
+
 #endif //DNRECORDER_SAFE_QUEUE_H

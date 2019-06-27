@@ -499,7 +499,7 @@ Java_com_demo_livePlayer_util_player_Player_native_1prepare(JNIEnv *env, jobject
 
     javaCallHelper = new JavaCallHelper(javaVM, env, instance);
     ffmpegHelper = new FFmpegHelper(javaCallHelper, dataSource);
-    ffmpegHelper->setRenderFrameCallback(renderFrame);
+    ffmpegHelper->setRenderCallback(renderFrame);
     ffmpegHelper->prepare();
     env->ReleaseStringUTFChars(dataSource_, dataSource);
 }

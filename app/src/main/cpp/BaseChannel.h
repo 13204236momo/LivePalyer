@@ -23,8 +23,6 @@ public:
     BaseChannel(volatile int channelId, JavaCallHelper *javaCallHelper,
                 AVCodecContext *avCodecContext);
 
-    virtual void start() = 0;
-
     virtual void play() = 0;
 
     virtual void stop() = 0;
@@ -48,10 +46,11 @@ public:
             avcodec_close(avCodecContext);
             avcodec_free_context(&avCodecContext);
             avCodecContext = 0;
-            pkt_queue.clear();
-            frame_queue.clear();
-            LOGE("释放channel:%d%d", pkt_queue.size(), frame_queue.size());
         }
+        pkt_queue.clear();
+        frame_queue.clear();
+        LOGE("释放channel:%d%d", pkt_queue.size(), frame_queue.size());
+
     }
 };
 
