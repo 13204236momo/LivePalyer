@@ -112,9 +112,9 @@ void *startThread(void *args) {
 
 void FFmpegHelper::start() {
     isPlaying = true;
-//    if (audioChannel) {
-//        audioChannel->play();
-//    }
+    if (audioChannel) {
+        audioChannel->play();
+    }
     if (videoChannel) {
         videoChannel->play();
     }

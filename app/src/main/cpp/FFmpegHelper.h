@@ -22,10 +22,8 @@ public:
     void prepare();
 
     void prepareFFmpeg();
-
     void start();
     void play();
-
     void setRenderCallback(RenderFrame renderFrame);
 
 private:
