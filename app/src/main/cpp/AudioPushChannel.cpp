@@ -10,21 +10,21 @@
 #include "faac.h"
 #include "librtmp/rtmp.h"
 
-RTMPPacket * AudioChannel::getAudioTag(){
-u_char *buf;
-u_long len;
-faacEncGetDecoderSpecificInfo(audioCodec,&buf,&len);
-int bodySize = 2 + len;
+RTMPPacket *AudioChannel::getAudioTag() {
+    u_char *buf;
+    u_long len;
+    faacEncGetDecoderSpecificInfo(audioCodec, &buf, &len);
+    int bodySize = 2 + len;
 
     RTMPPacket *packet = new RTMPPacket;
-    RTMPPacket_Alloc(packet,bodySize);
+    RTMPPacket_Alloc(packet, bodySize);
     packet->m_body[0] = 0xAF;
-    if (mChannels ==1){
+    if (mChannels == 1) {
         packet->m_body[0] = 0xAE;
     }
     packet->m_body[1] = 0x00;
     //编码之后的aac数据
-    memcpy(&packet->m_body[2],buf,len);
+    memcpy(&packet->m_body[2], buf, len);
     packet->m_hasAbsTimestamp = 0;
     packet->m_nBodySize = bodySize;
     packet->m_packetType = RTMP_PACKET_TYPE_AUDIO;
@@ -35,25 +35,25 @@ int bodySize = 2 + len;
 
 void AudioChannel::encodeData(int8_t *data) {
     int byteLen = faacEncEncode(audioCodec, reinterpret_cast<int32_t *>(data), inputSample, buffer,
-                  maxOutputBytes);
-     if (byteLen>0){
-         RTMPPacket *packet = new RTMPPacket;
-         int bodySize = 2+byteLen;
-         RTMPPacket_Alloc(packet,bodySize);
-         packet->m_body[0] = 0xAF;
-         if (mChannels ==1){
-             packet->m_body[0] = 0xAF;
-         }
-         packet->m_body[1] = 0x01;
-         //编码之后的aac数据
-         memcpy(&packet->m_body[2],buffer,byteLen);
-         packet->m_hasAbsTimestamp = 0;
-         packet->m_nBodySize = bodySize;
-         packet->m_packetType = RTMP_PACKET_TYPE_AUDIO;
-         packet->m_nChannel = 0x11;
-         packet->m_headerType = RTMP_PACKET_SIZE_LARGE;
-         audioCallback(packet);
-     }
+                                maxOutputBytes);
+    if (byteLen > 0) {
+        RTMPPacket *packet = new RTMPPacket;
+        int bodySize = 2 + byteLen;
+        RTMPPacket_Alloc(packet, bodySize);
+        packet->m_body[0] = 0xAF;
+        if (mChannels == 1) {
+            packet->m_body[0] = 0xAF;
+        }
+        packet->m_body[1] = 0x01;
+        //编码之后的aac数据
+        memcpy(&packet->m_body[2], buffer, byteLen);
+        packet->m_hasAbsTimestamp = 0;
+        packet->m_nBodySize = bodySize;
+        packet->m_packetType = RTMP_PACKET_TYPE_AUDIO;
+        packet->m_nChannel = 0x11;
+        packet->m_headerType = RTMP_PACKET_SIZE_LARGE;
+        audioCallback(packet);
+    }
 }
 
 /**

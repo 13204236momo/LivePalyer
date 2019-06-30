@@ -3,9 +3,10 @@
 //
 #include "BaseChannel.h"
 BaseChannel::BaseChannel(volatile int channelId, JavaCallHelper *javaCallHelper,
-            AVCodecContext *avCodecContext)  : channelId(channelId),
+            AVCodecContext *avCodecContext,AVRational time_base)  : channelId(channelId),
                                                avCodecContext(avCodecContext),
-                                               javaCallHelper(javaCallHelper) {
+                                               javaCallHelper(javaCallHelper),
+                                               time_base(time_base){
     pkt_queue.setReleaseHandle(releaseAvPacket);
     frame_queue.setReleaseHandle(releaseAvFrame);
 

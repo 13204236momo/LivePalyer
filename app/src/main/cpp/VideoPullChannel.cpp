@@ -5,6 +5,7 @@
 
 #include "VideoPullChannel.h"
 #include "JavaCallHelper.h"
+
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavutil/imgutils.h>
@@ -12,15 +13,48 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-VideoPullChannel::VideoPullChannel(int id, JavaCallHelper *javaCallHelper, AVCodecContext *avCodecContext): BaseChannel(id, javaCallHelper, avCodecContext) {
+
+void dropPacket(queue<AVPacket *> &q) {
+    while (!q.empty()) {
+        LOGE("丢弃视频");
+        AVPacket *pkt = q.front();
+        if (pkt->flags != AV_PKT_FLAG_KEY) {
+            q.pop();
+            BaseChannel::releaseAvPacket(pkt);
+        } else {
+            break;
+        }
+    }
+}
+
+void dropFrame(queue<AVFrame *> &q) {
+    while (!q.empty()) {
+        LOGE("丢弃视频");
+        AVFrame *frame = q.front();
+        if (frame->flags != AV_PKT_FLAG_KEY) {
+            q.pop();
+            BaseChannel::releaseAvFrame(frame);
+        } else {
+            break;
+        }
+    }
+}
+
+VideoPullChannel::VideoPullChannel(int id, JavaCallHelper *javaCallHelper,
+                                   AVCodecContext *avCodecContext, AVRational time_base)
+        : BaseChannel(id, javaCallHelper, avCodecContext, time_base) {
+    frame_queue.setReleaseHandle(releaseAvFrame);
+    frame_queue.setSyncHandle(dropFrame);
     this->javaCallHelper = javaCallHelper;
     this->avCodecContext = avCodecContext;
 }
+
 void *decode(void *args) {
     VideoPullChannel *videoChannel = static_cast<VideoPullChannel *>(args);
     videoChannel->decodePacket();
     return 0;
 }
+
 void *synchronize(void *args) {
     VideoPullChannel *videoChannel = static_cast<VideoPullChannel *>(args);
     videoChannel->synchronizeFrame();
@@ -39,6 +73,7 @@ void VideoPullChannel::play() {
 void VideoPullChannel::stop() {
 
 }
+
 
 void VideoPullChannel::decodePacket() {
 //子线程
@@ -101,13 +136,45 @@ void VideoPullChannel::synchronizeFrame() {
                   reinterpret_cast<const uint8_t *const *>(frame->data), frame->linesize, 0,
                   frame->height,
                   dst_data, dst_linesize);
-//        回调出去
+        //回调出去
         renderFrame(dst_data[0], dst_linesize[0], avCodecContext->width, avCodecContext->height);
-        av_usleep(16 * 1000);
+
+        clock = frame->pts * av_q2d(time_base);
+        double frame_delays = 1.0 / fps;
+
+        double audioClock = audioPullChannel->clock;
+        double diff = clock - audioClock;
+        //将解码所需的时间算进去，配置差的手机解码耗时多
+        //解码时间
+        double extra_delay = frame->repeat_pict / (2 * fps);
+        double delay = extra_delay + frame_delays;
+
+        if (clock > audioClock) {
+            //视频播放超前
+            if (diff > 1) {  //超前很多
+                av_usleep((delay * 2) * 1000000);
+            } else {
+                av_usleep((delay * diff) * 1000000);
+            }
+        } else {
+            //视频播放延后
+            if (fabs(diff) > 1) {
+                //不休眠
+            } else if (fabs(diff) >= 0.05) {
+                //视频需要追赶   进行丢帧操作
+                releaseAvFrame(frame);
+                frame_queue.sync();
+            } else {
+
+
+            }
+        }
+
+
         releaseAvFrame(frame);
-//    绘制 1    不是 2
-//         dst_data   rgba
-//         window
+        //绘制 1    不是 2
+        //dst_data   rgba
+        //window
 
     }
     av_freep(&dst_data[0]);
@@ -120,3 +187,8 @@ void VideoPullChannel::setRenderCallback(RenderFrame renderFrame) {
     this->renderFrame = renderFrame;
 
 }
+
+void VideoPullChannel::setFps(double fps) {
+    this->fps = fps;
+}
+

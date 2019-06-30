@@ -19,9 +19,11 @@ public:
     volatile bool isPlaying;
     AVCodecContext *avCodecContext;
     JavaCallHelper *javaCallHelper;
+    AVRational time_base;
+    double clock = 0;
 
     BaseChannel(volatile int channelId, JavaCallHelper *javaCallHelper,
-                AVCodecContext *avCodecContext);
+                AVCodecContext *avCodecContext,AVRational time_base);
 
     virtual void play() = 0;
 

@@ -2,10 +2,11 @@
 // Created by Administrator on 2019/6/4.
 //
 
+#include <cstring>
 #include "FFmpegHelper.h"
 #include "JavaCallHelper.h"
 #include "macro.h"
-
+#include "../../../../../../Library/Android/sdk/ndk-bundle/toolchains/llvm/prebuilt/darwin-x86_64/include/c++/4.9.x/cstring"
 
 FFmpegHelper::FFmpegHelper(JavaCallHelper *javaCallHelper, const char *dataSource) {
     url = new char[strlen(dataSource) + 1];
@@ -14,11 +15,10 @@ FFmpegHelper::FFmpegHelper(JavaCallHelper *javaCallHelper, const char *dataSourc
 }
 
 void *prepareFFmpeg_(void *args) {
-    FFmpegHelper *wangYiFFmpeg = static_cast<FFmpegHelper *>(args);
-    wangYiFFmpeg->prepareFFmpeg();
+    FFmpegHelper *fFmpegHelper = static_cast<FFmpegHelper *>(args);
+    fFmpegHelper->prepareFFmpeg();
     return 0;
 }
-
 
 
 void FFmpegHelper::prepare() {
@@ -54,6 +54,7 @@ void FFmpegHelper::prepareFFmpeg() {
 
     for (int i = 0; i < formatContext->nb_streams; ++i) {
         AVCodecParameters *codecpar = formatContext->streams[i]->codecpar;
+        AVStream *stream = formatContext->streams[i];
         //找到解码器
         AVCodec *dec = avcodec_find_decoder(codecpar->codec_id);
         if (!dec) {
@@ -84,12 +85,15 @@ void FFmpegHelper::prepareFFmpeg() {
         //音频
         if (codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
 //音频
-            audioChannel = new AudioPullChannel(i, javaCallHelper, codecContext);
+            audioChannel = new AudioPullChannel(i, javaCallHelper, codecContext, stream->time_base);
 
         } else if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-//视频
-            videoChannel = new VideoPullChannel(i, javaCallHelper, codecContext);
+            //视频
+            AVRational frame_rate = stream->avg_frame_rate;
+            double fps = av_q2d(frame_rate);
+            videoChannel = new VideoPullChannel(i, javaCallHelper, codecContext, stream->time_base);
             videoChannel->setRenderCallback(renderFrame);
+            videoChannel->setFps(fps);
         }
     }
 
@@ -99,10 +103,14 @@ void FFmpegHelper::prepareFFmpeg() {
             javaCallHelper->onError(THREAD_CHILD, FFMPEG_NOMEDIA);
         return;
     }
-    if (javaCallHelper)
+    videoChannel->audioPullChannel = audioChannel;
+    if (javaCallHelper){
         javaCallHelper->onPrepare(THREAD_CHILD);
+    }
+
 
 }
+
 void *startThread(void *args) {
 
     FFmpegHelper *ffmpeg = static_cast<FFmpegHelper *>(args);
@@ -124,9 +132,9 @@ void FFmpegHelper::start() {
 void FFmpegHelper::play() {
     int ret = 0;
     while (isPlaying) {
-         //100帧
+        //100帧
         if (audioChannel && audioChannel->pkt_queue.size() > 100) {
-         //  思想    队列    生产者的生产速度 远远大于消费者的速度  10ms   100packet     12ms  10ms
+            //  思想    队列    生产者的生产速度 远远大于消费者的速度  10ms   100packet     12ms  10ms
             av_usleep(1000 * 10);
             continue;
         }
@@ -146,7 +154,7 @@ void FFmpegHelper::play() {
             } else if (videoChannel && packet->stream_index == videoChannel->channelId) {
                 videoChannel->pkt_queue.enQueue(packet);
             }
-        }else if (ret == AVERROR_EOF) {
+        } else if (ret == AVERROR_EOF) {
             //读取完毕 但是不一定播放完毕
             if (videoChannel->pkt_queue.empty() && videoChannel->frame_queue.empty() &&
                 audioChannel->pkt_queue.empty() && audioChannel->frame_queue.empty()) {

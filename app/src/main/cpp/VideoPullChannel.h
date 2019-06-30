@@ -16,7 +16,7 @@ class VideoPullChannel : public BaseChannel{
 
 
 public:
-    VideoPullChannel(int id, JavaCallHelper *javaCallHelper, AVCodecContext *avCodecContext);
+    VideoPullChannel(int id, JavaCallHelper *javaCallHelper, AVCodecContext *avCodecContext,AVRational time_base);
     virtual void play();
 
     virtual void stop();
@@ -24,10 +24,14 @@ public:
 
     void synchronizeFrame();
     void setRenderCallback(RenderFrame renderFrame);
+    void setFps(double fps);
 private:
     pthread_t pid_video_play;
     pthread_t pid_synchronize;
     RenderFrame renderFrame;
+    double fps;
+public:
+    AudioPullChannel *audioPullChannel;
 };
 
 
