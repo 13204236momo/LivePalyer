@@ -24,4 +24,8 @@ public class StartActivity extends AppCompatActivity {
     public void liveDown(View view) {
         startActivity(new Intent(this, LivePullActivity.class));
     }
+
+    public void OPENSGL(View view) {
+        startActivity(new Intent(this, OpenSGLActivity.class));
+    }
 }

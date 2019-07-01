@@ -6,7 +6,6 @@
 #include "FFmpegHelper.h"
 #include "JavaCallHelper.h"
 #include "macro.h"
-#include "../../../../../../Library/Android/sdk/ndk-bundle/toolchains/llvm/prebuilt/darwin-x86_64/include/c++/4.9.x/cstring"
 
 FFmpegHelper::FFmpegHelper(JavaCallHelper *javaCallHelper, const char *dataSource) {
     url = new char[strlen(dataSource) + 1];
@@ -151,7 +150,7 @@ void FFmpegHelper::play() {
             //将数据包加入队列
             if (audioChannel && packet->stream_index == audioChannel->channelId) {
                 audioChannel->pkt_queue.enQueue(packet);
-            } else if (videoChannel && packet->stream_index == videoChannel->channelId) {
+            } else if (videoChannel && packet->stream_index == videoChannel->channelId) { 
                 videoChannel->pkt_queue.enQueue(packet);
             }
         } else if (ret == AVERROR_EOF) {
