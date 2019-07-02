@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
@@ -25,10 +26,15 @@ public class LivePullActivity extends AppCompatActivity implements SeekBar.OnSee
     SeekBar seekBar;
     @BindView(R.id.surfaceView)
     SurfaceView surfaceView;
+    @BindView(R.id.iv_start)
+    ImageView ivStart;
+    @BindView(R.id.iv_suspend)
+    ImageView ivSuspend;
 
     private Player player;
     private int progress;
-
+    private boolean isTouch;
+    private boolean isSeek;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,12 +48,35 @@ public class LivePullActivity extends AppCompatActivity implements SeekBar.OnSee
         player.setOnNativePlayStateListener(new Player.OnNativePlayStateListener() {
             @Override
             public void onPrepared() {
+                int duration = player.getDuration();
+                if (duration != 0) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            seekBar.setVisibility(View.VISIBLE);
+                        }
+                    });
+                }
                 player.start();
             }
 
             @Override
-            public void onProgress(int progress) {
-
+            public void onProgress(final int progress) {
+                if (!isTouch) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            int duration = player.getDuration();
+                            if (duration != 0) {
+                                if (isSeek) {
+                                    isSeek = false;
+                                    return;
+                                }
+                                seekBar.setProgress(progress *100 / duration);
+                            }
+                        }
+                    });
+                }
             }
 
             @Override
@@ -57,10 +86,6 @@ public class LivePullActivity extends AppCompatActivity implements SeekBar.OnSee
         });
     }
 
-    public void startWatch(View view) {
-        getPermissions(view);
-    }
-
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 
@@ -68,12 +93,15 @@ public class LivePullActivity extends AppCompatActivity implements SeekBar.OnSee
 
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
-
+        isTouch = true;
     }
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
-
+        isTouch = false;
+        isSeek = true;
+        progress = player.getDuration() * seekBar.getProgress() / 100;
+        player.seek(progress);
     }
 
     private void getPermissions(final View view) {
@@ -84,7 +112,7 @@ public class LivePullActivity extends AppCompatActivity implements SeekBar.OnSee
                     public void accept(Boolean granted) throws Exception {
                         if (granted) {
                             switch (view.getId()) {
-                                case R.id.btn_start:
+                                case R.id.iv_start:
                                     File file = new File(Environment.getExternalStorageDirectory(), "input.mp4");
                                     player.prepare(file.getAbsolutePath());
                                     break;
@@ -102,4 +130,23 @@ public class LivePullActivity extends AppCompatActivity implements SeekBar.OnSee
                 });
     }
 
+    public void toSuspend(View view) {
+        ivStart.setVisibility(View.VISIBLE);
+        ivSuspend.setVisibility(View.GONE);
+        player.suspend();
+    }
+
+    public void toStart(View view) {
+        ivStart.setVisibility(View.GONE);
+        ivSuspend.setVisibility(View.VISIBLE);
+        if (progress==0){
+            getPermissions(view);
+        }else if (progress>0){
+            player.continuePlay();
+        }
+    }
+
+    public void onRelease(View view) {
+player.release();
+    }
 }

@@ -20,6 +20,7 @@ public:
     AudioPullChannel(volatile int channelId, JavaCallHelper *javaCallHelper,
                      AVCodecContext *avCodecContext,AVRational time_base);
 
+    virtual ~AudioPullChannel();
     virtual void start();
     virtual void play();
     virtual void stop();

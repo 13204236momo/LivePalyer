@@ -17,6 +17,8 @@ class VideoPullChannel : public BaseChannel{
 
 public:
     VideoPullChannel(int id, JavaCallHelper *javaCallHelper, AVCodecContext *avCodecContext,AVRational time_base);
+
+    virtual ~VideoPullChannel();
     virtual void play();
 
     virtual void stop();

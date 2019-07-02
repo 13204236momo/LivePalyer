@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -13,14 +13,33 @@
         android:id="@+id/seekBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@+id/surfaceView"
         android:max="100"
-        android:visibility="visible" />
+        android:visibility="gone" />
 
-    <Button
-        android:id="@+id/btn_start"
+    <ImageView
+        android:id="@+id/iv_suspend"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="startWatch"
-        android:text="开始" />
+        android:layout_below="@+id/seekBar"
+        android:background="@drawable/play"
+        android:onClick="toSuspend"
+        android:visibility="gone" />
 
-</LinearLayout>
+    <ImageView
+        android:id="@+id/iv_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/seekBar"
+        android:background="@drawable/stop"
+        android:onClick="toStart" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/seekBar"
+        android:layout_toRightOf="@+id/iv_start"
+        android:onClick="onRelease"
+        android:text="停止" />
+
+</RelativeLayout>

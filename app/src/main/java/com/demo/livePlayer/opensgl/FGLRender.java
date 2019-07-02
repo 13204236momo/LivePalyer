@@ -7,7 +7,7 @@ import android.view.View;
 import com.demo.livePlayer.opensgl.shape.Cube;
 import com.demo.livePlayer.opensgl.shape.Triangle;
 
-import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.egl.EGLConfig; 
 import javax.microedition.khronos.opengles.GL10;
 
 public class FGLRender  implements GLSurfaceView.Renderer {

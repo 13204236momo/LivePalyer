@@ -206,8 +206,17 @@ int AudioPullChannel::getPcm() {
         //buffer的大小
         data_size = nb * out_channels * out_sampleSize;
         clock = frame->pts * av_q2d(time_base);
+
         break;
+    }
+    if (javaCallHelper){
+        javaCallHelper->onProgress(THREAD_CHILD,clock);
     }
     releaseAvFrame(frame);
     return data_size;
+}
+
+AudioPullChannel::~AudioPullChannel() {
+free(buffer);
+buffer = 0;
 }

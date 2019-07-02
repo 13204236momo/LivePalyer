@@ -192,3 +192,7 @@ void VideoPullChannel::setFps(double fps) {
     this->fps = fps;
 }
 
+VideoPullChannel::~VideoPullChannel() {
+
+}
+

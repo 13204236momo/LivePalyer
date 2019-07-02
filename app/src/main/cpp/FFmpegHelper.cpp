@@ -3,6 +3,8 @@
 //
 
 #include <cstring>
+#include <arpa/nameser_compat.h>
+#include <arpa/nameser.h>
 #include "FFmpegHelper.h"
 #include "JavaCallHelper.h"
 #include "macro.h"
@@ -11,6 +13,8 @@ FFmpegHelper::FFmpegHelper(JavaCallHelper *javaCallHelper, const char *dataSourc
     url = new char[strlen(dataSource) + 1];
     this->javaCallHelper = javaCallHelper;
     strcpy(url, dataSource);
+    duration = 0;
+    pthread_mutex_init(&seekMutex, 0);
 }
 
 void *prepareFFmpeg_(void *args) {
@@ -51,6 +55,7 @@ void FFmpegHelper::prepareFFmpeg() {
         return;
     }
 
+    duration = formatContext->duration / 1000000;
     for (int i = 0; i < formatContext->nb_streams; ++i) {
         AVCodecParameters *codecpar = formatContext->streams[i]->codecpar;
         AVStream *stream = formatContext->streams[i];
@@ -103,7 +108,7 @@ void FFmpegHelper::prepareFFmpeg() {
         return;
     }
     videoChannel->audioPullChannel = audioChannel;
-    if (javaCallHelper){
+    if (javaCallHelper) {
         javaCallHelper->onPrepare(THREAD_CHILD);
     }
 
@@ -150,7 +155,7 @@ void FFmpegHelper::play() {
             //将数据包加入队列
             if (audioChannel && packet->stream_index == audioChannel->channelId) {
                 audioChannel->pkt_queue.enQueue(packet);
-            } else if (videoChannel && packet->stream_index == videoChannel->channelId) { 
+            } else if (videoChannel && packet->stream_index == videoChannel->channelId) {
                 videoChannel->pkt_queue.enQueue(packet);
             }
         } else if (ret == AVERROR_EOF) {
@@ -171,11 +176,98 @@ void FFmpegHelper::play() {
 }
 
 FFmpegHelper::~FFmpegHelper() {
-
+    pthread_mutex_destroy(&seekMutex);
+    javaCallHelper = 0;
+    DELETE(url);
 }
 
 void FFmpegHelper::setRenderCallback(RenderFrame renderFrame) {
     this->renderFrame = renderFrame;
+}
+
+int FFmpegHelper::getDuration() {
+    return duration;
+}
+
+void FFmpegHelper::seek(int progress) {
+//拖动要在视频时长范围之内
+    if (progress < 0 || progress >= duration) {
+        return;
+    }
+
+    if (!formatContext) {
+        return;
+    }
+
+    isSeek = 1;
+    int64_t seek = progress * 1000000;
+    av_seek_frame(formatContext, -1, seek, AVSEEK_FLAG_BACKWARD);
+
+    if (videoChannel) {
+        videoChannel->stopWork();
+        videoChannel->clear();
+        videoChannel->startWork();
+    }
+    if (audioChannel) {
+        audioChannel->stopWork();
+        audioChannel->clear();
+        audioChannel->startWork();
+    }
+    pthread_mutex_unlock(&seekMutex);
+    isSeek = 0;
+}
+
+
+void FFmpegHelper::suspend() {
+    if (!formatContext) {
+        return;
+    }
+    pthread_mutex_lock(&seekMutex);
+    if (videoChannel) {
+        videoChannel->stopWork();
+        videoChannel->clear();
+    }
+    if (audioChannel) {
+        audioChannel->stopWork();
+        audioChannel->clear();
+    }
+    pthread_mutex_unlock(&seekMutex);
+}
+
+void FFmpegHelper::continuePlay() {
+    //pthread_mutex_lock(&seekMutex);
+    videoChannel->startWork();
+    audioChannel->startWork();
+    int64_t seek = audioChannel->clock * 1000000;
+    av_seek_frame(formatContext, -1, seek, AVSEEK_FLAG_BACKWARD);
+    //pthread_mutex_unlock(&seekMutex);
+}
+
+void *async_stop(void *args) {
+    FFmpegHelper *fFmpegHelper = static_cast<FFmpegHelper *>(args);
+    fFmpegHelper->isPlaying = 0;
+    DELETE(fFmpegHelper->audioChannel);
+    DELETE(fFmpegHelper->videoChannel);
+    if (fFmpegHelper->formatContext) {
+        avformat_close_input(&fFmpegHelper->formatContext);
+        avformat_free_context(fFmpegHelper->formatContext);
+        fFmpegHelper->formatContext = NULL;
+    }
+    DELETE(fFmpegHelper);
+    LOGE("释放");
+    return 0;
+}
+
+void FFmpegHelper::stop() {
+    javaCallHelper = 0;
+    if (videoChannel) {
+        videoChannel->javaCallHelper = 0;
+    }
+    if (audioChannel->javaCallHelper) {
+        audioChannel->javaCallHelper = 0;
+    }
+
+    pthread_create(&pid_stop, 0, async_stop, this);
 }
 
 

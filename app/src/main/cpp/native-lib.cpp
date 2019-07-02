@@ -480,7 +480,7 @@ void renderFrame(uint8_t *data, int lineSize, int w, int h) {
     uint8_t *window_data = static_cast<uint8_t *>(window_buffer.bits);
     int window_lineSize = window_buffer.stride * 4;
     for (int i = 0; i < window_buffer.height; ++i) {
-        memcpy(window_data+i*window_lineSize,data+i*lineSize,window_lineSize);
+        memcpy(window_data + i * window_lineSize, data + i * lineSize, window_lineSize);
     }
     ANativeWindow_unlockAndPost(window);
 }
@@ -524,5 +524,67 @@ Java_com_demo_livePlayer_util_player_Player_native_1set_1surface(JNIEnv *env, jo
     }
     //创建新的窗口用于视频显示
     window = ANativeWindow_fromSurface(env, surface);
+
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_demo_livePlayer_util_player_Player_native_1getDuration(JNIEnv *env, jobject instance) {
+
+    if (ffmpegHelper) {
+        return ffmpegHelper->getDuration();
+    }
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_demo_livePlayer_util_player_Player_native_1seek(JNIEnv *env, jobject instance,
+                                                         jint progress) {
+    if (ffmpegHelper) {
+        ffmpegHelper->seek(progress);
+    }
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_demo_livePlayer_util_player_Player_native_1suspend(JNIEnv *env, jobject instance) {
+
+    if (ffmpegHelper) {
+        ffmpegHelper->suspend();
+    }
+
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_demo_livePlayer_util_player_Player_native_1continuePlay(JNIEnv *env, jobject instance) {
+
+    if (ffmpegHelper) {
+        ffmpegHelper->continuePlay();
+    }
+
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_demo_livePlayer_util_player_Player_native_1stop(JNIEnv *env, jobject instance) {
+
+    if (ffmpegHelper){
+        ffmpegHelper->stop();
+    }
+
+    if (javaCallHelper){
+        delete javaCallHelper;
+        javaCallHelper = 0;
+    }
+
+}
+
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_demo_livePlayer_util_player_Player_native_1release(JNIEnv *env, jobject instance) {
+
+    if (window){
+        ANativeWindow_release(window);
+        window = 0;
+    }
 
 }

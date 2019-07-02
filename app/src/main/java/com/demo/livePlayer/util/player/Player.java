@@ -60,12 +60,50 @@ public class Player implements SurfaceHolder.Callback {
         }
     }
 
+    public int getDuration(){
+        return native_getDuration();
+    }
+
     public OnNativePlayStateListener listener;
 
     public void setOnNativePlayStateListener(OnNativePlayStateListener listener) {
         this.listener = listener;
     }
 
+    public void seek(final int progress) {
+        new Thread(){
+            @Override
+            public void run() {
+                native_seek(progress);
+            }
+        }.start();
+    }
+
+    public void suspend() {
+        new Thread(){
+            @Override
+            public void run() {
+                native_suspend();
+            }
+        }.start();
+    }
+
+    public void continuePlay() {
+        new Thread(){
+            @Override
+            public void run() {
+                native_continuePlay();
+            }
+        }.start();
+    }
+
+    public void release(){
+        if (null !=this.surfaceHolder){
+            this.surfaceHolder.removeCallback(this);
+        }
+        native_stop();
+        native_release();
+    }
 
 
     public interface OnNativePlayStateListener {
@@ -86,4 +124,16 @@ public class Player implements SurfaceHolder.Callback {
     private native void native_start();
 
     private native void native_set_surface(Surface surface);
+
+    private native int native_getDuration();
+
+    private native void native_seek(int progress);
+
+    private native void native_suspend();
+
+    private native void native_continuePlay();
+
+    private native void native_stop();
+
+    private native void native_release();
 }
