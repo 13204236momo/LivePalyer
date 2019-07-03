@@ -35,6 +35,7 @@ public class LivePullActivity extends AppCompatActivity implements SeekBar.OnSee
     private int progress;
     private boolean isTouch;
     private boolean isSeek;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,7 +73,7 @@ public class LivePullActivity extends AppCompatActivity implements SeekBar.OnSee
                                     isSeek = false;
                                     return;
                                 }
-                                seekBar.setProgress(progress *100 / duration);
+                                seekBar.setProgress(progress * 100 / duration);
                             }
                         }
                     });
@@ -139,14 +140,15 @@ public class LivePullActivity extends AppCompatActivity implements SeekBar.OnSee
     public void toStart(View view) {
         ivStart.setVisibility(View.GONE);
         ivSuspend.setVisibility(View.VISIBLE);
-        if (progress==0){
+        if (progress == 0) {
             getPermissions(view);
-        }else if (progress>0){
+        } else if (progress > 0) {
             player.continuePlay();
         }
+        //getPermissions(view);
     }
 
     public void onRelease(View view) {
-player.release();
+        player.stop();
     }
 }

@@ -28,4 +28,8 @@ public class StartActivity extends AppCompatActivity {
     public void OPENSGL(View view) {
         startActivity(new Intent(this, OpenSGLActivity.class));
     }
+
+    public void amazing(View view) {
+        startActivity(new Intent(this,AmazingActivity.class));
+    }
 }

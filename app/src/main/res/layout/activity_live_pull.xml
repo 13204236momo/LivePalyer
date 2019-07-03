@@ -38,7 +38,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/seekBar"
-        android:layout_toRightOf="@+id/iv_start"
+        android:layout_marginLeft="150dp"
         android:onClick="onRelease"
         android:text="停止" />
 

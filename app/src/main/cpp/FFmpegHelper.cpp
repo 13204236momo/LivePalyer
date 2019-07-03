@@ -198,7 +198,7 @@ void FFmpegHelper::seek(int progress) {
     if (!formatContext) {
         return;
     }
-
+    pthread_mutex_lock(&seekMutex);
     isSeek = 1;
     int64_t seek = progress * 1000000;
     av_seek_frame(formatContext, -1, seek, AVSEEK_FLAG_BACKWARD);
@@ -235,17 +235,31 @@ void FFmpegHelper::suspend() {
 }
 
 void FFmpegHelper::continuePlay() {
-    //pthread_mutex_lock(&seekMutex);
-    videoChannel->startWork();
-    audioChannel->startWork();
+    if (!formatContext) {
+        return;
+    }
+    pthread_mutex_lock(&seekMutex);
+    isSeek = 1;
     int64_t seek = audioChannel->clock * 1000000;
     av_seek_frame(formatContext, -1, seek, AVSEEK_FLAG_BACKWARD);
-    //pthread_mutex_unlock(&seekMutex);
-}
+
+    if (videoChannel) {
+        videoChannel->stopWork();
+        videoChannel->clear();
+    }
+    if (audioChannel) {
+        audioChannel->stopWork();
+        audioChannel->clear();
+    }
+    pthread_mutex_unlock(&seekMutex);
+    isSeek = 0;
+     }
 
 void *async_stop(void *args) {
     FFmpegHelper *fFmpegHelper = static_cast<FFmpegHelper *>(args);
+    pthread_join(fFmpegHelper->pid_prepare, 0);
     fFmpegHelper->isPlaying = 0;
+    pthread_join(fFmpegHelper->pid_play, 0);
     DELETE(fFmpegHelper->audioChannel);
     DELETE(fFmpegHelper->videoChannel);
     if (fFmpegHelper->formatContext) {
@@ -266,7 +280,7 @@ void FFmpegHelper::stop() {
     if (audioChannel->javaCallHelper) {
         audioChannel->javaCallHelper = 0;
     }
-
+    isPlaying = 0;
     pthread_create(&pid_stop, 0, async_stop, this);
 }
 

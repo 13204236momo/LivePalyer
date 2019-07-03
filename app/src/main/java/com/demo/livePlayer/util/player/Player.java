@@ -97,11 +97,15 @@ public class Player implements SurfaceHolder.Callback {
         }.start();
     }
 
+    public void stop(){
+        native_stop();
+    }
+
     public void release(){
         if (null !=this.surfaceHolder){
             this.surfaceHolder.removeCallback(this);
         }
-        native_stop();
+        //native_stop();
         native_release();
     }
 

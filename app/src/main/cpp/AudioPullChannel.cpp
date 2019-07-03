@@ -41,13 +41,16 @@ void AudioPullChannel::start() {
 
 }
 
-void AudioPullChannel::stop() {}
+void AudioPullChannel::stop() {
+    isPlaying = 0;
+}
 
 AudioPullChannel::AudioPullChannel(volatile int channelId, JavaCallHelper *javaCallHelper,
-                                   AVCodecContext *avCodecContext,AVRational time_base) : BaseChannel(channelId,
-                                                                                 javaCallHelper,
-                                                                                 avCodecContext,
-                                                                                 time_base) {
+                                   AVCodecContext *avCodecContext, AVRational time_base)
+        : BaseChannel(channelId,
+                      javaCallHelper,
+                      avCodecContext,
+                      time_base) {
     //根据布局获取声道数
     out_channels = av_get_channel_layout_nb_channels(AV_CH_LAYOUT_STEREO);
     out_sampleSize = av_get_bytes_per_sample(AV_SAMPLE_FMT_S16);
@@ -82,7 +85,7 @@ void AudioPullChannel::initOpenSL() {
 
     //    ----------------1-----初始化播放引擎-----------------------------
     SLresult result;
-    result= slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
+    result = slCreateEngine(&engineObject, 0, NULL, 0, NULL, NULL);
     if (SL_RESULT_SUCCESS != result) {
         return;
     }
@@ -91,13 +94,13 @@ void AudioPullChannel::initOpenSL() {
         return;
     }
     //音频接口  相当于SurfaceHodler
-    result=(*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineInterface);
+    result = (*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engineInterface);
     if (SL_RESULT_SUCCESS != result) {
         return;
     }
 
     //    ---------2------------初始化播放引擎-----------------------------
-    result =  (*engineInterface)->CreateOutputMix(engineInterface, &outputMixObject, 0, 0, 0);
+    result = (*engineInterface)->CreateOutputMix(engineInterface, &outputMixObject, 0, 0, 0);
     // 初始化混音器outputMixObject
     result = (*outputMixObject)->Realize(outputMixObject, SL_BOOLEAN_FALSE);
     if (SL_RESULT_SUCCESS != result) {
@@ -121,10 +124,9 @@ void AudioPullChannel::initOpenSL() {
     SLDataSource slDataSource = {&android_queue, &pcm};
     const SLInterfaceID ids[1] = {SL_IID_BUFFERQUEUE};
     const SLboolean req[1] = {SL_BOOLEAN_TRUE};
-    (*engineInterface)->CreateAudioPlayer(engineInterface
-            ,&bqPlayerObject// //播放器
-            ,&slDataSource//播放器参数  播放缓冲队列   播放格式
-            ,&audioSnk,//播放缓冲区
+    (*engineInterface)->CreateAudioPlayer(engineInterface, &bqPlayerObject// //播放器
+            , &slDataSource//播放器参数  播放缓冲队列   播放格式
+            , &audioSnk,//播放缓冲区
                                           1,//播放接口回调个数
                                           ids,//设置播放队列ID
                                           req//是否采用内置的播放队列
@@ -142,7 +144,7 @@ void AudioPullChannel::initOpenSL() {
     //    设置播放状态
     (*bqPlayerInterface)->SetPlayState(bqPlayerInterface, SL_PLAYSTATE_PLAYING);
     bqPlayerCallback(bqPlayerBufferQueue, this);
-    LOGE("--- 手动调用播放 packet:%d",this->pkt_queue.size());
+    LOGE("--- 手动调用播放 packet:%d", this->pkt_queue.size());
 
 }
 
@@ -209,14 +211,14 @@ int AudioPullChannel::getPcm() {
 
         break;
     }
-    if (javaCallHelper){
-        javaCallHelper->onProgress(THREAD_CHILD,clock);
+    if (javaCallHelper) {
+        javaCallHelper->onProgress(THREAD_CHILD, clock);
     }
     releaseAvFrame(frame);
     return data_size;
 }
 
 AudioPullChannel::~AudioPullChannel() {
-free(buffer);
-buffer = 0;
+    free(buffer);
+    buffer = 0;
 }

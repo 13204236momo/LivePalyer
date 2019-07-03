@@ -71,7 +71,7 @@ void VideoPullChannel::play() {
 }
 
 void VideoPullChannel::stop() {
-
+    isPlaying = 0;
 }
 
 

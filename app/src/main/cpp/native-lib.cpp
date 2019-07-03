@@ -42,6 +42,7 @@ ANativeWindow *window = 0;
 FFmpegHelper *ffmpegHelper;
 JavaCallHelper *javaCallHelper;
 JavaVM *javaVM = NULL;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     javaVM = vm;
@@ -467,13 +468,19 @@ Java_com_demo_livePlayer_util_live_LivePusher_getInoutSamples(JNIEnv *env, jobje
 }
 
 void renderFrame(uint8_t *data, int lineSize, int w, int h) {
-//渲染
+
+    pthread_mutex_lock(&mutex);
+    if (!window){
+        pthread_mutex_unlock(&mutex);
+    }
+    //渲染
 //设置窗口属性
     ANativeWindow_setBuffersGeometry(window, w, h, WINDOW_FORMAT_RGBA_8888);
     ANativeWindow_Buffer window_buffer;
     if (ANativeWindow_lock(window, &window_buffer, 0)) {
         ANativeWindow_release(window);
         window = 0;
+        pthread_mutex_unlock(&mutex);
         return;
     }
     //把数据逐行拷贝到window的缓存区
@@ -483,6 +490,7 @@ void renderFrame(uint8_t *data, int lineSize, int w, int h) {
         memcpy(window_data + i * window_lineSize, data + i * lineSize, window_lineSize);
     }
     ANativeWindow_unlockAndPost(window);
+    pthread_mutex_unlock(&mutex);
 }
 
 extern "C"
