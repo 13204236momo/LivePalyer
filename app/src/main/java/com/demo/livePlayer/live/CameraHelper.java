@@ -1,4 +1,4 @@
-package com.demo.livePlayer.util.live;
+package com.demo.livePlayer.live;
 
 import android.app.Activity;
 import android.graphics.ImageFormat;
@@ -25,6 +25,11 @@ public class CameraHelper implements SurfaceHolder.Callback, Camera.PreviewCallb
     private OnChangedSizeListener mOnChangedSizeListener;
     byte[] bytes;
 
+    public CameraHelper(int cameraId, int width, int height) {
+        mCameraId = cameraId;
+        mWidth = width;
+        mHeight = height;
+    }
     public CameraHelper(Activity activity, int cameraId, int width, int height) {
         mActivity = activity;
         mCameraId = cameraId;

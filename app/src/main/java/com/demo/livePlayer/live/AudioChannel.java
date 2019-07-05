@@ -1,4 +1,4 @@
-package com.demo.livePlayer.util.live;
+package com.demo.livePlayer.live;
 
 
 import android.media.AudioFormat;

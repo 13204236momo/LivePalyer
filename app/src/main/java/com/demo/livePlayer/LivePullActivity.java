@@ -12,7 +12,7 @@ import android.widget.SeekBar;
 import android.widget.Toast;
 
 import com.demo.livePlayer.util.PermissionUtility;
-import com.demo.livePlayer.util.player.Player;
+import com.demo.livePlayer.live.Player;
 
 import java.io.File;
 

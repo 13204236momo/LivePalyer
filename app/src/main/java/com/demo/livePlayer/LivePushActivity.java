@@ -10,7 +10,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.demo.livePlayer.util.PermissionUtility;
-import com.demo.livePlayer.util.live.LivePusher;
+import com.demo.livePlayer.live.LivePusher;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;

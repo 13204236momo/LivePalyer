@@ -1,4 +1,4 @@
-package com.demo.livePlayer.util.player;
+package com.demo.livePlayer.live;
 
 import android.view.Surface;
 import android.view.SurfaceHolder;
