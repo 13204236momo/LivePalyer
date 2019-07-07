@@ -8,7 +8,6 @@ import com.demo.livePlayer.R;
 import com.demo.livePlayer.util.GLUtil;
 
 
-
 //主要是获取摄像头数据，并且创建FBO  在FBO中添加特效
 public class CameraFilter extends AbstractFilter {
 
@@ -62,13 +61,11 @@ public class CameraFilter extends AbstractFilter {
     public int onDrawFrame(int textureId) {
         //设置显示窗口
         GLES20.glViewport(0, 0, mWidth, mHeight);
-
         //不调用的话就是默认的操作glsurfaceview中的纹理了。显示到屏幕上了
-        //这里我们只是把它画到了FBO中（缓存）
+        //这里我们还只是把它画到fbo中(缓存)
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFrameBuffer[0]);
         //使用着色器
         GLES20.glUseProgram(mProgram);
-        mVertexBuffer.position(0);
         mVertexBuffer.position(0);
         GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 0, mVertexBuffer);
         GLES20.glEnableVertexAttribArray(vPosition);
@@ -77,20 +74,20 @@ public class CameraFilter extends AbstractFilter {
         GLES20.glVertexAttribPointer(vCoord, 2, GLES20.GL_FLOAT, false, 0, mFragmentBuffer);
         GLES20.glEnableVertexAttribArray(vCoord);
 
-        //变换矩阵
+//        变换矩阵
         GLES20.glUniformMatrix4fv(vMatrix, 1, false, matrix, 0);
-        //不一样的地方
+
         //激活图层
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId);
 
         GLES20.glUniform1i(vTexture, 0);
-        //绘制
+//        绘制
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
-        //解绑
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+//  解绑
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         return mFrameBufferTextures[0];
     }
 
