@@ -5,6 +5,8 @@ import android.hardware.Camera;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
+import com.demo.livePlayer.util.CameraHelper;
+
 public class VideoChannel implements Camera.PreviewCallback, CameraHelper.OnChangedSizeListener {
     private static final String TAG = "tuch";
     private CameraHelper cameraHelper;

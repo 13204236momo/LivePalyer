@@ -356,7 +356,7 @@ JNIEXPORT void JNICALL
  * @param env
  * @param instance
  */
-Java_com_demo_livePlayer_util_live_LivePusher_native_1init(JNIEnv *env, jobject instance) {
+Java_com_demo_livePlayer_live_LivePusher_native_1init(JNIEnv *env, jobject instance) {
 
     videoChannel = new VideoChannel;
     videoChannel->setVideoCallback(callback);
@@ -376,7 +376,7 @@ JNIEXPORT void JNICALL
  * @param fps 帧率
  * @param bitrate 码率
  */
-Java_com_demo_livePlayer_util_live_LivePusher_native_1setVideoEncInfo(JNIEnv *env, jobject instance,
+Java_com_demo_livePlayer_live_LivePusher_native_1setVideoEncInfo(JNIEnv *env, jobject instance,
                                                                       jint width, jint height,
                                                                       jint fps, jint bitrate) {
     if (!videoChannel) {
@@ -394,7 +394,7 @@ JNIEXPORT void JNICALL
  * @param instance
  * @param url_  服务器地址
  */
-Java_com_demo_livePlayer_util_live_LivePusher_native_1start(JNIEnv *env, jobject instance,
+Java_com_demo_livePlayer_live_LivePusher_native_1start(JNIEnv *env, jobject instance,
                                                             jstring url_) {
     const char *url = env->GetStringUTFChars(url_, 0);
 
@@ -419,7 +419,7 @@ JNIEXPORT void JNICALL
  * @param instance
  * @param data_
  */
-Java_com_demo_livePlayer_util_live_LivePusher_native_1pushVideo(JNIEnv *env, jobject instance,
+Java_com_demo_livePlayer_live_LivePusher_native_1pushVideo(JNIEnv *env, jobject instance,
                                                                 jbyteArray data_) {
     jbyte *data = env->GetByteArrayElements(data_, NULL);
     if (!videoChannel || !readyPushing) {
@@ -437,7 +437,7 @@ JNIEXPORT void JNICALL
  * @param instance
  * @param data_
  */
-Java_com_demo_livePlayer_util_live_LivePusher_native_1pushAudio(JNIEnv *env, jobject instance,
+Java_com_demo_livePlayer_live_LivePusher_native_1pushAudio(JNIEnv *env, jobject instance,
                                                                 jbyteArray data_) {
     jbyte *data = env->GetByteArrayElements(data_, NULL);
 
@@ -450,7 +450,7 @@ Java_com_demo_livePlayer_util_live_LivePusher_native_1pushAudio(JNIEnv *env, job
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_demo_livePlayer_util_live_LivePusher_native_1setAudioEncInfo(JNIEnv *env, jobject instance,
+Java_com_demo_livePlayer_live_LivePusher_native_1setAudioEncInfo(JNIEnv *env, jobject instance,
                                                                       jint i, jint channels) {
     if (audioChannel) {
         audioChannel->setAudioEncInfo(i, channels);
@@ -458,7 +458,7 @@ Java_com_demo_livePlayer_util_live_LivePusher_native_1setAudioEncInfo(JNIEnv *en
 
 }extern "C"
 JNIEXPORT jint JNICALL
-Java_com_demo_livePlayer_util_live_LivePusher_getInoutSamples(JNIEnv *env, jobject instance) {
+Java_com_demo_livePlayer_live_LivePusher_getInoutSamples(JNIEnv *env, jobject instance) {
 
     if (audioChannel) {
         return audioChannel->getInputSamples();

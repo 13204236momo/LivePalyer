@@ -1,7 +1,8 @@
-package com.demo.livePlayer.live;
+package com.demo.livePlayer.util;
 
 import android.app.Activity;
 import android.graphics.ImageFormat;
+import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.Surface;
@@ -24,6 +25,7 @@ public class CameraHelper implements SurfaceHolder.Callback, Camera.PreviewCallb
     private int mRotation;
     private OnChangedSizeListener mOnChangedSizeListener;
     byte[] bytes;
+    private SurfaceTexture mSurfaceTexture;
 
     public CameraHelper(int cameraId, int width, int height) {
         mCameraId = cameraId;
@@ -59,7 +61,7 @@ public class CameraHelper implements SurfaceHolder.Callback, Camera.PreviewCallb
         }
     }
 
-    private void startPreview() {
+    public void startPreview() {
         try {
             //获得camera对象
             mCamera = Camera.open(mCameraId);
@@ -79,6 +81,31 @@ public class CameraHelper implements SurfaceHolder.Callback, Camera.PreviewCallb
             mCamera.setPreviewCallbackWithBuffer(this);
             //设置预览画面
             mCamera.setPreviewDisplay(mSurfaceHolder);
+            mCamera.startPreview();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void startPreview(SurfaceTexture surfaceTexture) {
+        mSurfaceTexture = surfaceTexture;
+        try {
+            //获得camera对象
+            mCamera = Camera.open(mCameraId);
+            //配置camera的属性
+            Camera.Parameters parameters = mCamera.getParameters();
+            //设置预览数据格式为nv21
+            parameters.setPreviewFormat(ImageFormat.NV21);
+            //这是摄像头宽、高
+            parameters.setPreviewSize(mWidth, mHeight);
+            // 设置摄像头 图像传感器的角度、方向
+            mCamera.setParameters(parameters);
+            buffer = new byte[mWidth * mHeight * 3 / 2];
+            //数据缓存区
+            mCamera.addCallbackBuffer(buffer);
+            mCamera.setPreviewCallbackWithBuffer(this);
+            //设置预览画面
+            mCamera.setPreviewTexture(mSurfaceTexture);
             mCamera.startPreview();
         } catch (Exception ex) {
             ex.printStackTrace();

@@ -38,7 +38,7 @@ public abstract class AbstractFilter {
         mVertexBuffer = ByteBuffer.allocateDirect(4 * 2 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
         mVertexBuffer.clear();
         float[] VERTEX = {
-                -0.1f, -1.0f,
+                -1.0f, -1.0f,
                 1.0f, -1.0f,
                 -1.0f, 1.0f,
                 1.0f, 1.0f
@@ -51,7 +51,7 @@ public abstract class AbstractFilter {
                 0.0f, 1.0f,
                 1.0f, 1.0f,
                 0.0f, 0.0f,
-                1.0f, 1.0f
+                1.0f, 0.0f
         };
         mFragmentBuffer.put(FRAGMENT);
         initialize(context);
@@ -61,8 +61,8 @@ public abstract class AbstractFilter {
     protected abstract void initCoordinate();
 
     protected void initialize(Context context) {
-        String vertexShader = OpenFileUtil.readRawTextFile(context, R.raw.base_vertex);
-        String fragmentShader = OpenFileUtil.readRawTextFile(context,R.raw.base_frag);
+        String vertexShader = OpenFileUtil.readRawTextFile(context, vertexShaderId);
+        String fragmentShader = OpenFileUtil.readRawTextFile(context,fragmentShaderId);
         mProgram = GLUtil.loadProgram(vertexShader,fragmentShader);
         //获取vPosition
         vPosition = GLES20.glGetAttribLocation(mProgram,"vPosition");
@@ -97,4 +97,12 @@ public abstract class AbstractFilter {
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
         return textureId;
     }
+
+    public void onReady(int width,int height){
+        this.mWidth = width;
+        this.mHeight = height;
+    }
+
+
+
 }
