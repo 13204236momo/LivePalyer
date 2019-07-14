@@ -24,7 +24,7 @@ public class CameraFilter extends AbstractFilter {
 
     @Override
     protected void initCoordinate() {
-        mVertexBuffer.clear();
+        mFragmentBuffer.clear();
         float[] TEXTURE = {
                 0.0f, 0.0f,
                 0.0f, 1.0f,
@@ -32,7 +32,7 @@ public class CameraFilter extends AbstractFilter {
                 1.0f, 1.0f
         };
 
-        mVertexBuffer.put(TEXTURE);
+        mFragmentBuffer.put(TEXTURE);
     }
 
     public void onReady(int width, int height) {

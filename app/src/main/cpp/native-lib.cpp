@@ -5,6 +5,8 @@
 #include <pthread.h>
 #include "android/native_window_jni.h"
 #include <stdint.h>
+//#include <opencv2/core/cvstd_wrapper.hpp>
+//#include <opencv2/objdetect.hpp>
 #include "x264.h"
 #include "librtmp/rtmp.h"
 #include "VideoPushChannel.h"
@@ -13,6 +15,8 @@
 #include "safe_queue.h"
 #include "FFmpegHelper.h"
 #include "JavaCallHelper.h"
+//#include "opencv2/opencv.hpp"
+
 
 #define MAX_AUDIO_FRAME_SIZE 192000
 extern "C" {
@@ -27,6 +31,8 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
+//using namespace cv;
+//DetectionBasedTracker *tracker = 0;
 VideoChannel *videoChannel;
 AudioChannel *audioChannel;
 //是否已开启推流线程
@@ -377,8 +383,8 @@ JNIEXPORT void JNICALL
  * @param bitrate 码率
  */
 Java_com_demo_livePlayer_live_LivePusher_native_1setVideoEncInfo(JNIEnv *env, jobject instance,
-                                                                      jint width, jint height,
-                                                                      jint fps, jint bitrate) {
+                                                                 jint width, jint height,
+                                                                 jint fps, jint bitrate) {
     if (!videoChannel) {
         return;
     }
@@ -395,7 +401,7 @@ JNIEXPORT void JNICALL
  * @param url_  服务器地址
  */
 Java_com_demo_livePlayer_live_LivePusher_native_1start(JNIEnv *env, jobject instance,
-                                                            jstring url_) {
+                                                       jstring url_) {
     const char *url = env->GetStringUTFChars(url_, 0);
 
     if (isStart) {
@@ -420,7 +426,7 @@ JNIEXPORT void JNICALL
  * @param data_
  */
 Java_com_demo_livePlayer_live_LivePusher_native_1pushVideo(JNIEnv *env, jobject instance,
-                                                                jbyteArray data_) {
+                                                           jbyteArray data_) {
     jbyte *data = env->GetByteArrayElements(data_, NULL);
     if (!videoChannel || !readyPushing) {
         return;
@@ -438,7 +444,7 @@ JNIEXPORT void JNICALL
  * @param data_
  */
 Java_com_demo_livePlayer_live_LivePusher_native_1pushAudio(JNIEnv *env, jobject instance,
-                                                                jbyteArray data_) {
+                                                           jbyteArray data_) {
     jbyte *data = env->GetByteArrayElements(data_, NULL);
 
     if (!audioChannel || !readyPushing) {
@@ -451,7 +457,7 @@ Java_com_demo_livePlayer_live_LivePusher_native_1pushAudio(JNIEnv *env, jobject 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_demo_livePlayer_live_LivePusher_native_1setAudioEncInfo(JNIEnv *env, jobject instance,
-                                                                      jint i, jint channels) {
+                                                                 jint i, jint channels) {
     if (audioChannel) {
         audioChannel->setAudioEncInfo(i, channels);
     }
@@ -470,7 +476,7 @@ Java_com_demo_livePlayer_live_LivePusher_getInoutSamples(JNIEnv *env, jobject in
 void renderFrame(uint8_t *data, int lineSize, int w, int h) {
 
     pthread_mutex_lock(&mutex);
-    if (!window){
+    if (!window) {
         pthread_mutex_unlock(&mutex);
     }
     //渲染
@@ -501,7 +507,7 @@ JNIEXPORT void JNICALL
  * @param instance
  * @param dataSource_
  */
-Java_com_demo_livePlayer_util_player_Player_native_1prepare(JNIEnv *env, jobject instance,
+Java_com_demo_livePlayer_live_Player_native_1prepare(JNIEnv *env, jobject instance,
                                                             jstring dataSource_) {
     const char *dataSource = env->GetStringUTFChars(dataSource_, 0);
 
@@ -514,7 +520,7 @@ Java_com_demo_livePlayer_util_player_Player_native_1prepare(JNIEnv *env, jobject
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_demo_livePlayer_util_player_Player_native_1start(JNIEnv *env, jobject instance) {
+Java_com_demo_livePlayer_live_Player_native_1start(JNIEnv *env, jobject instance) {
     //开始播放
     if (ffmpegHelper) {
         ffmpegHelper->start();
@@ -523,7 +529,7 @@ Java_com_demo_livePlayer_util_player_Player_native_1start(JNIEnv *env, jobject i
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_demo_livePlayer_util_player_Player_native_1set_1surface(JNIEnv *env, jobject instance,
+Java_com_demo_livePlayer_live_Player_native_1set_1surface(JNIEnv *env, jobject instance,
                                                                  jobject surface) {
 
     if (window) {
@@ -537,7 +543,7 @@ Java_com_demo_livePlayer_util_player_Player_native_1set_1surface(JNIEnv *env, jo
 
 extern "C"
 JNIEXPORT jint JNICALL
-Java_com_demo_livePlayer_util_player_Player_native_1getDuration(JNIEnv *env, jobject instance) {
+Java_com_demo_livePlayer_live_Player_native_1getDuration(JNIEnv *env, jobject instance) {
 
     if (ffmpegHelper) {
         return ffmpegHelper->getDuration();
@@ -545,7 +551,7 @@ Java_com_demo_livePlayer_util_player_Player_native_1getDuration(JNIEnv *env, job
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_demo_livePlayer_util_player_Player_native_1seek(JNIEnv *env, jobject instance,
+Java_com_demo_livePlayer_live_Player_native_1seek(JNIEnv *env, jobject instance,
                                                          jint progress) {
     if (ffmpegHelper) {
         ffmpegHelper->seek(progress);
@@ -554,7 +560,7 @@ Java_com_demo_livePlayer_util_player_Player_native_1seek(JNIEnv *env, jobject in
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_demo_livePlayer_util_player_Player_native_1suspend(JNIEnv *env, jobject instance) {
+Java_com_demo_livePlayer_live_Player_native_1suspend(JNIEnv *env, jobject instance) {
 
     if (ffmpegHelper) {
         ffmpegHelper->suspend();
@@ -563,7 +569,7 @@ Java_com_demo_livePlayer_util_player_Player_native_1suspend(JNIEnv *env, jobject
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_demo_livePlayer_util_player_Player_native_1continuePlay(JNIEnv *env, jobject instance) {
+Java_com_demo_livePlayer_live_Player_native_1continuePlay(JNIEnv *env, jobject instance) {
 
     if (ffmpegHelper) {
         ffmpegHelper->continuePlay();
@@ -572,13 +578,13 @@ Java_com_demo_livePlayer_util_player_Player_native_1continuePlay(JNIEnv *env, jo
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_demo_livePlayer_util_player_Player_native_1stop(JNIEnv *env, jobject instance) {
+Java_com_demo_livePlayer_live_Player_native_1stop(JNIEnv *env, jobject instance) {
 
-    if (ffmpegHelper){
+    if (ffmpegHelper) {
         ffmpegHelper->stop();
     }
 
-    if (javaCallHelper){
+    if (javaCallHelper) {
         delete javaCallHelper;
         javaCallHelper = 0;
     }
@@ -588,11 +594,73 @@ Java_com_demo_livePlayer_util_player_Player_native_1stop(JNIEnv *env, jobject in
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_demo_livePlayer_util_player_Player_native_1release(JNIEnv *env, jobject instance) {
+Java_com_demo_livePlayer_live_Player_native_1release(JNIEnv *env, jobject instance) {
 
-    if (window){
+    if (window) {
         ANativeWindow_release(window);
         window = 0;
     }
 
 }
+
+
+//class CascadeDetectorAdapter : public DetectionBasedTracker::IDetector {
+//public:
+//    CascadeDetectorAdapter(cv::Ptr<cv::CascadeClassifier> detector) :
+//            IDetector(),
+//            Detector(detector) {
+//    }
+//
+////检测到人脸  调用  Mat == Bitmap
+//    void detect(const cv::Mat &Image, std::vector<cv::Rect> &objects) {
+//        Detector->detectMultiScale(Image, objects, scaleFactor, minNeighbours, 0, minObjSize,
+//                                   maxObjSize);
+//    }
+//
+//    virtual ~CascadeDetectorAdapter() {
+//    }
+//
+//private:
+//    CascadeDetectorAdapter();
+//
+//    cv::Ptr<cv::CascadeClassifier> Detector;
+//};
+//
+//extern "C"
+//JNIEXPORT void JNICALL
+//Java_com_demo_livePlayer_opencv_OpencvJni_init(JNIEnv *env, jobject instance, jstring path_) {
+//    const char *path = env->GetStringUTFChars(path_, 0);
+//
+//    //智能指针
+//    Ptr<CascadeClassifier> classifier = makePtr<CascadeClassifier>(path);
+//    //创建检测器
+//    Ptr<CascadeDetectorAdapter> mainDetector = makePtr<CascadeDetectorAdapter>(classifier);
+//
+//    //跟踪器
+//    //智能指针
+//    Ptr<CascadeClassifier> classifier1 = makePtr<CascadeClassifier>(path);
+//    //创建检测器
+//    Ptr<CascadeDetectorAdapter> trackingDetector = makePtr<CascadeDetectorAdapter>(classifier1);
+//
+//    DetectionBasedTracker::Parameters DetectorParams;
+//
+//    tracker = new DetectionBasedTracker(mainDetector, trackingDetector, DetectorParams);
+//    tracker->run();
+//
+//
+//    env->ReleaseStringUTFChars(path_, path);
+//}
+//
+//extern "C"
+//JNIEXPORT void JNICALL
+//Java_com_demo_livePlayer_opencv_OpencvJni_postData(JNIEnv *env, jobject instance, jbyteArray data_,
+//                                                   jint w, jint h, jint cameraId) {
+//    jbyte *data = env->GetByteArrayElements(data_, NULL);
+//
+//    Mat src(h+h/2,w,CV_8UC1,data);
+//    //nv21 -> rgba
+//    cvtColor(src,src,COLOR_YUV2RGBA_NV21);
+//    imwrite("/storage/emulated/0/src.jpg", src);
+//
+//    env->ReleaseByteArrayElements(data_, data, 0);
+//}

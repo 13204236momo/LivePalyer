@@ -15,7 +15,7 @@ find_library( # Sets the name of the path variable.
         log)
 
 #引入头文件
-include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include_x264 ${CMAKE_SOURCE_DIR}/include_faac)
+include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/include_x264 ${CMAKE_SOURCE_DIR}/include_faac ${CMAKE_SOURCE_DIR}/include_opencv)
 #include_directories(${CMAKE_SOURCE_DIR}/include_x264)
 #CMAKE_CXX_FLAGS是一个系统变量
 #ANDROID_ABI：内置系统变量，表示当前编译的平台即（"armeabi-v7a"）
@@ -38,4 +38,5 @@ target_link_libraries(
         OpenSLES
         rtmp
         x264
-        faac)
+        faac
+        opencv_java4)

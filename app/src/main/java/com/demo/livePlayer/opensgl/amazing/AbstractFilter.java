@@ -77,11 +77,11 @@ public abstract class AbstractFilter {
 
         //使用着色器
         GLES20.glUseProgram(mProgram);
-        //mVertexBuffer.position(0);
+        mVertexBuffer.position(0);
         GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 0, mVertexBuffer);
         GLES20.glEnableVertexAttribArray(vPosition);
 
-        //mFragmentBuffer.position(0);
+        mFragmentBuffer.position(0);
         GLES20.glVertexAttribPointer(vCoord, 2, GLES20.GL_FLOAT, false, 0, mFragmentBuffer);
         GLES20.glEnableVertexAttribArray(vCoord);
 
