@@ -39,6 +39,10 @@ public class StartActivity extends AppCompatActivity {
         getPermission();
     }
 
+    public void face(View view) {
+        startActivity(new Intent(this,FollowFaceActivity.class));
+    }
+
     private void getPermission() {
         PermissionUtility.getRxPermission(StartActivity.this)
                 .request(Manifest.permission.CAMERA) //申请所需权限
@@ -53,4 +57,6 @@ public class StartActivity extends AppCompatActivity {
                     }
                 });
     }
+
+
 }

@@ -3,15 +3,12 @@ package com.demo.livePlayer.opensgl.amazing;
 import android.content.Context;
 import android.opengl.GLES20;
 
-import com.demo.livePlayer.R;
 import com.demo.livePlayer.util.GLUtil;
-import com.demo.livePlayer.util.OpenFileUtil;
+import com.demo.livePlayer.util.FileUtil;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-
-import javax.microedition.khronos.opengles.GL10;
 
 public abstract class AbstractFilter {
 
@@ -61,8 +58,8 @@ public abstract class AbstractFilter {
     protected abstract void initCoordinate();
 
     protected void initialize(Context context) {
-        String vertexShader = OpenFileUtil.readRawTextFile(context, vertexShaderId);
-        String fragmentShader = OpenFileUtil.readRawTextFile(context,fragmentShaderId);
+        String vertexShader = FileUtil.readRawTextFile(context, vertexShaderId);
+        String fragmentShader = FileUtil.readRawTextFile(context,fragmentShaderId);
         mProgram = GLUtil.loadProgram(vertexShader,fragmentShader);
         //获取vPosition
         vPosition = GLES20.glGetAttribLocation(mProgram,"vPosition");
@@ -80,11 +77,11 @@ public abstract class AbstractFilter {
 
         //使用着色器
         GLES20.glUseProgram(mProgram);
-        mVertexBuffer.position(0);
+        //mVertexBuffer.position(0);
         GLES20.glVertexAttribPointer(vPosition, 2, GLES20.GL_FLOAT, false, 0, mVertexBuffer);
         GLES20.glEnableVertexAttribArray(vPosition);
 
-        mFragmentBuffer.position(0);
+        //mFragmentBuffer.position(0);
         GLES20.glVertexAttribPointer(vCoord, 2, GLES20.GL_FLOAT, false, 0, mFragmentBuffer);
         GLES20.glEnableVertexAttribArray(vCoord);
 

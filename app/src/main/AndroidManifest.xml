@@ -18,7 +18,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".AmazingActivity"></activity>
+        <activity android:name=".FollowFaceActivity"></activity>
+        <activity android:name=".AmazingActivity" />
         <activity android:name=".OpenSGLActivity" />
         <activity android:name=".LivePullActivity" />
         <activity android:name=".LivePushActivity" />
