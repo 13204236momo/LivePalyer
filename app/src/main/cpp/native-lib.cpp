@@ -5,8 +5,7 @@
 #include <pthread.h>
 #include "android/native_window_jni.h"
 #include <stdint.h>
-//#include <opencv2/core/cvstd_wrapper.hpp>
-//#include <opencv2/objdetect.hpp>
+#include <opencv2/imgproc.hpp>
 #include "x264.h"
 #include "librtmp/rtmp.h"
 #include "VideoPushChannel.h"
@@ -15,8 +14,8 @@
 #include "safe_queue.h"
 #include "FFmpegHelper.h"
 #include "JavaCallHelper.h"
-//#include "opencv2/opencv.hpp"
 
+#include "FaceTrack.h"
 
 #define MAX_AUDIO_FRAME_SIZE 192000
 extern "C" {
@@ -31,8 +30,6 @@ extern "C" {
 #include <libswresample/swresample.h>
 }
 
-//using namespace cv;
-//DetectionBasedTracker *tracker = 0;
 VideoChannel *videoChannel;
 AudioChannel *audioChannel;
 //是否已开启推流线程
@@ -508,7 +505,7 @@ JNIEXPORT void JNICALL
  * @param dataSource_
  */
 Java_com_demo_livePlayer_live_Player_native_1prepare(JNIEnv *env, jobject instance,
-                                                            jstring dataSource_) {
+                                                     jstring dataSource_) {
     const char *dataSource = env->GetStringUTFChars(dataSource_, 0);
 
     javaCallHelper = new JavaCallHelper(javaVM, env, instance);
@@ -530,7 +527,7 @@ Java_com_demo_livePlayer_live_Player_native_1start(JNIEnv *env, jobject instance
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_demo_livePlayer_live_Player_native_1set_1surface(JNIEnv *env, jobject instance,
-                                                                 jobject surface) {
+                                                          jobject surface) {
 
     if (window) {
         ANativeWindow_release(window);
@@ -552,7 +549,7 @@ Java_com_demo_livePlayer_live_Player_native_1getDuration(JNIEnv *env, jobject in
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_demo_livePlayer_live_Player_native_1seek(JNIEnv *env, jobject instance,
-                                                         jint progress) {
+                                                  jint progress) {
     if (ffmpegHelper) {
         ffmpegHelper->seek(progress);
     }
@@ -604,63 +601,67 @@ Java_com_demo_livePlayer_live_Player_native_1release(JNIEnv *env, jobject instan
 }
 
 
-//class CascadeDetectorAdapter : public DetectionBasedTracker::IDetector {
-//public:
-//    CascadeDetectorAdapter(cv::Ptr<cv::CascadeClassifier> detector) :
-//            IDetector(),
-//            Detector(detector) {
-//    }
-//
-////检测到人脸  调用  Mat == Bitmap
-//    void detect(const cv::Mat &Image, std::vector<cv::Rect> &objects) {
-//        Detector->detectMultiScale(Image, objects, scaleFactor, minNeighbours, 0, minObjSize,
-//                                   maxObjSize);
-//    }
-//
-//    virtual ~CascadeDetectorAdapter() {
-//    }
-//
-//private:
-//    CascadeDetectorAdapter();
-//
-//    cv::Ptr<cv::CascadeClassifier> Detector;
-//};
-//
-//extern "C"
-//JNIEXPORT void JNICALL
-//Java_com_demo_livePlayer_opencv_OpencvJni_init(JNIEnv *env, jobject instance, jstring path_) {
-//    const char *path = env->GetStringUTFChars(path_, 0);
-//
-//    //智能指针
-//    Ptr<CascadeClassifier> classifier = makePtr<CascadeClassifier>(path);
-//    //创建检测器
-//    Ptr<CascadeDetectorAdapter> mainDetector = makePtr<CascadeDetectorAdapter>(classifier);
-//
-//    //跟踪器
-//    //智能指针
-//    Ptr<CascadeClassifier> classifier1 = makePtr<CascadeClassifier>(path);
-//    //创建检测器
-//    Ptr<CascadeDetectorAdapter> trackingDetector = makePtr<CascadeDetectorAdapter>(classifier1);
-//
-//    DetectionBasedTracker::Parameters DetectorParams;
-//
-//    tracker = new DetectionBasedTracker(mainDetector, trackingDetector, DetectorParams);
-//    tracker->run();
-//
-//
-//    env->ReleaseStringUTFChars(path_, path);
-//}
-//
-//extern "C"
-//JNIEXPORT void JNICALL
-//Java_com_demo_livePlayer_opencv_OpencvJni_postData(JNIEnv *env, jobject instance, jbyteArray data_,
-//                                                   jint w, jint h, jint cameraId) {
-//    jbyte *data = env->GetByteArrayElements(data_, NULL);
-//
-//    Mat src(h+h/2,w,CV_8UC1,data);
-//    //nv21 -> rgba
-//    cvtColor(src,src,COLOR_YUV2RGBA_NV21);
-//    imwrite("/storage/emulated/0/src.jpg", src);
-//
-//    env->ReleaseByteArrayElements(data_, data, 0);
-//}
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_com_demo_livePlayer_opencv_OpencvJni_init(JNIEnv *env, jobject instance, jstring path_,
+                                               jstring seeta_) {
+    const char *path = env->GetStringUTFChars(path_, 0);
+    const char *seeta = env->GetStringUTFChars(seeta_, 0);
+
+    //初始化检测器和跟踪器
+    FaceTrack *faceTrack = new FaceTrack(path);
+
+    env->ReleaseStringUTFChars(path_, path);
+    env->ReleaseStringUTFChars(seeta_, seeta);
+    return reinterpret_cast<jlong>(faceTrack);
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_demo_livePlayer_opencv_OpencvJni_native_1startTrack(JNIEnv *env, jobject instance,
+                                                             jlong self) {
+
+    if (self == 0) {
+        return;
+    }
+    FaceTrack *me = reinterpret_cast<FaceTrack *>(self);
+    me->startTracing();
+}
+extern "C"
+JNIEXPORT jobject JNICALL
+Java_com_demo_livePlayer_opencv_OpencvJni_native_1detector(JNIEnv *env, jobject instance,
+                                                           jlong self, jbyteArray obj_,
+                                                           jint cameraId, jint w, jint h) {
+   if (self == 0){
+       return NULL;
+   }
+    jbyte *data = env->GetByteArrayElements(obj_, NULL);
+
+    FaceTrack *me = (FaceTrack *) self;
+//    人脸检测
+//    Mat   ==Bitmap  yuv  w h +u/4+v/4
+    Mat src(h + h / 2, w, CV_8UC1, data);
+//    nv21   rgba
+//    String content=content.splite(".");
+    cvtColor(src, src, COLOR_YUV2RGBA_NV21);
+    if (cameraId == 1) {
+//        imwrite("/storage/emulated/0/src.jpg", src);
+//        前置摄像头
+        rotate(src, src, ROTATE_90_COUNTERCLOCKWISE);
+//        imwrite("/storage/emulated/0/src2.jpg", src);
+        //1  水平翻转 镜像  0  垂直翻转
+        flip(src, src, 1);
+
+//        imwrite("/storage/emulated/0/src3.jpg", src);
+    }    else {
+        //顺时针旋转90度
+        rotate(src, src, ROTATE_90_CLOCKWISE);
+
+    }
+    Mat gray;
+    cvtColor(src, gray, COLOR_RGBA2GRAY);
+//    imwrite("/storage/emulated/0/src4.jpg", gray);
+//    对比度    黑白  轮廓 二值化
+    equalizeHist(gray, gray);
+
+    env->ReleaseByteArrayElements(obj_, data, 0);
+}

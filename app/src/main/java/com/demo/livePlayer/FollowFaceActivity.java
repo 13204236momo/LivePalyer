@@ -17,7 +17,7 @@ import java.io.File;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-public class FollowFaceActivity extends AppCompatActivity implements SurfaceHolder.Callback,Camera.PreviewCallback{
+public class FollowFaceActivity extends AppCompatActivity implements SurfaceHolder.Callback, Camera.PreviewCallback {
 
     @BindView(R.id.surfaceView)
     SurfaceView surfaceView;
@@ -32,19 +32,19 @@ public class FollowFaceActivity extends AppCompatActivity implements SurfaceHold
         setContentView(R.layout.activity_follow_face);
         ButterKnife.bind(this);
 
-        opencvJni = new OpencvJni();
-        cameraHelper = new CameraHelper(cameraId,640,480);
+     //   opencvJni = new OpencvJni();
+        cameraHelper = new CameraHelper(cameraId, 640, 480);
         cameraHelper.setPreviewCallback(this);
         surfaceView.getHolder().addCallback(this);
-        FileUtil.copyAssets(this,"lbpcascade_frontalface.xml");
+        FileUtil.copyAssets(this, "lbpcascade_frontalface.xml");
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        String path = new File(Environment.getExternalStorageDirectory(),"lbpcascade_frontalface.xml").getAbsolutePath();
+        String path = new File(Environment.getExternalStorageDirectory(), "lbpcascade_frontalface.xml").getAbsolutePath();
         cameraHelper.startPreview();
-        opencvJni.init(path);
+      //  opencvJni.init(path);
     }
 
     @Override
@@ -64,6 +64,6 @@ public class FollowFaceActivity extends AppCompatActivity implements SurfaceHold
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
-opencvJni.postData(data,640,480,cameraId);
+      //  opencvJni.postData(data, 640, 480, cameraId);
     }
 }

@@ -4,14 +4,18 @@ import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.os.Environment;
 
-import com.demo.livePlayer.util.CameraHelper;
+import com.demo.livePlayer.opencv.OpencvJni;
 import com.demo.livePlayer.util.CameraHelper1;
+import com.demo.livePlayer.util.FileUtil;
+
+import java.io.File;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-class AmazingRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener {
+class AmazingRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAvailableListener, Camera.PreviewCallback {
     private CameraHelper1 mCameraHelper;
     private AmazingView mView;
     private SurfaceTexture mSurfaceTexture;
@@ -19,8 +23,17 @@ class AmazingRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAva
     private float[] mtx = new float[16];
     CameraFilter mCameraFilter;
     ScreenFilter mScreenFilter;
+    OpencvJni opencvJni;
+    String path;
     public AmazingRender( AmazingView amazingView) {
         mView = amazingView;
+        init();
+    }
+
+    private void init() {
+        path = new File(Environment.getExternalStorageDirectory(),"lbpcascade_frontalface.xml").getAbsolutePath();
+        FileUtil.copyAssets(mView.getContext(),"lbpcascade_frontalface.xml");
+
     }
 
     @Override
@@ -47,8 +60,11 @@ class AmazingRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAva
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         mCameraHelper.startPreview(mSurfaceTexture);
+        mCameraHelper.setPreviewCallback(this);
         mCameraFilter.onReady(width,height);
         mScreenFilter.onReady(width,height);
+        opencvJni = new OpencvJni(path,mCameraHelper);
+        opencvJni.startTrack();
     }
 
     @Override
@@ -68,5 +84,10 @@ class AmazingRender implements GLSurfaceView.Renderer, SurfaceTexture.OnFrameAva
 
 //        mScreenFilter 将最终的特效运用到SurfaceView中
         mScreenFilter.onDrawFrame(id);
+    }
+
+    @Override
+    public void onPreviewFrame(byte[] data, Camera camera) {
+        opencvJni.detector(data);
     }
 }
